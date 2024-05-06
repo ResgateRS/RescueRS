@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
-using RescueRS.Presenter.Controllers.App.V1.Enums;
+using ResgateRS.Presenter.Controllers.App.V1.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Domain.Application.Services.Interfaces;
 using ResgateRS.Infrastructure.Repositories;
 using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 using ResgateRS.Tools;
+using ResgateRS.Auth;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class LoginService(UserRepository userRepository) : BaseService<UserRepository>(userRepository), IService
+public class LoginService(UserRepository userRepository, UserSession userSession) : BaseService<UserRepository>(userRepository, userSession), IService
 {
     public async Task<ActionResult<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
@@ -32,14 +33,15 @@ public class LoginService(UserRepository userRepository) : BaseService<UserRepos
             user = await _mainRepository.InsertOrUpdate(user);
         }
 
-        Dictionary<string, object> claims = new()
+
+        var userSession = new UserSession
         {
-            { LoginClaimsEnum.UserId, user.UserId },
-            { LoginClaimsEnum.Cellphone, user.Cellphone },
-            { LoginClaimsEnum.Rescuer, user.Rescuer }
+            UserId = user.UserId.ToString(),
+            Rescuer = user.Rescuer,
+            Cellphone = user.Cellphone
         };
 
-        string token = JwtManager.GenerateToken(claims);
+        string token = JwtManager.GenerateToken(userSession);
 
         return new OkObjectResult(new LoginResponseDTO
         {

@@ -1,14 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using ResgateRS.Extensions;
 using ResgateRS.Infrastructure.Database;
 using ResgateRS.Tools;
+using ResgateRS.Pagination;
+using ResgateRS.Middleware;
+using ResgateRS.SwaggerCustomizations;
+using ResgateRS.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var config = builder.Configuration;
 
 JwtManager.secret = config["AuthenticationSettings:TokenSecret"]!;
-JwtManager.expiration = Convert.ToInt64(config["AuthenticationSettings:ExpiresInMinutes"]);
+JwtManager.expirationMinutes = Convert.ToInt64(config["AuthenticationSettings:ExpiresInMinutes"]);
 
 try
 {
@@ -59,16 +64,34 @@ void ConfigureServices(IServiceCollection services)
         opts.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
     services.AddEndpointsApiExplorer();
-    services.AddSwaggerGen();
+    services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo { Title = "ResgateRS", Version = "v1" });
+
+        c.AddSecurityDefinition("Bearer", SwaggerSecurity.SecurityScheme);
+        c.AddSecurityRequirement(SwaggerSecurity.SecurityRequirement);
+
+        c.OperationFilter<AddPaginationHeaderParameter>();
+    });
 
     services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseOracle(builder.Configuration.GetConnectionString("ResgateRSDbContext")));
 
     services.RegisterRepositoriesAndServices();
+
+    services.AddScoped<UserSession>();
+
+    services.AddScoped<PaginationDTO>();
 }
 
 void Configure(WebApplication app)
 {
     app.UseCors("allOrigins");
+
+    app.UseMiddleware<ExceptionHandlerMiddleware>();
+
+    app.UseMiddleware<AuthenticationMiddleware>();
+
+    app.UseMiddleware<PaginationHandlerMiddleware>();
 
     app.UseSwagger();
     app.UseSwaggerUI();

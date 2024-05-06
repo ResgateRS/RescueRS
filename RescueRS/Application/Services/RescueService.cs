@@ -1,16 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RescueRS.Presenter.Controllers.App.V1.Enums;
+using ResgateRS.Presenter.Controllers.App.V1.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Domain.Application.Services.Interfaces;
 using ResgateRS.Infrastructure.Repositories;
 using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 using ResgateRS.Tools;
+using ResgateRS.Auth;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class RescueService(RescueRepository resgateRepository) : BaseService<RescueRepository>(resgateRepository), IService
+public class RescueService(RescueRepository resgateRepository, UserSession userSession) : BaseService<RescueRepository>(resgateRepository, userSession), IService
 {
-    public async Task<ActionResult<ResponseDTO>> ConfirmRescue(RescueConfirmDTO dto, string authToken)
+    public async Task<ActionResult<ResponseDTO>> ConfirmRescue(RescueConfirmDTO dto)
     {
         if (dto.RescueId == Guid.Empty)
             return new BadRequestObjectResult(new ResponseDTO
@@ -19,13 +20,13 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
                 Message = "Um erro aconteceu, tente novamente!"
             });
 
-        Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
-        if (userId == Guid.Empty)
-            return new UnauthorizedObjectResult(new ResponseDTO
-            {
-                DebugMessage = "Invalid token",
-                Message = "Ocorreu um erro, tente novamente!"
-            });
+        // Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
+        // if (userId == Guid.Empty)
+        //     return new UnauthorizedObjectResult(new ResponseDTO
+        //     {
+        //         DebugMessage = "Invalid token",
+        //         Message = "Ocorreu um erro, tente novamente!"
+        //     });
 
         RescueEntity? rescue = await _mainRepository.GetRescueById(dto.RescueId);
 
@@ -34,7 +35,8 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
 
         rescue.RescueDateTime = DateTimeOffset.Now;
         rescue.Rescued = true;
-        rescue.ConfirmedBy = userId;
+        rescue.ConfirmedBy = Guid.Empty;
+        // rescue.ConfirmedBy = userId;
 
         await _mainRepository.InsertOrUpdate(rescue);
 
@@ -62,8 +64,63 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
         return new OkObjectResult(RescueDTO.FromEntity(rescue));
     }
 
-    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListPendingRescues(int page, int size, double? latitude, double? longitude)
+    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListPendingRescues()
     {
+        // if (page < 1)
+        //     return new BadRequestObjectResult(new ResponseDTO
+        //     {
+        //         DebugMessage = "Page must be greater than 0",
+        //         Message = "Um erro aconteceu, tente novamente!"
+        //     });
+
+        // if (size < 1)
+        //     return new BadRequestObjectResult(new ResponseDTO
+        //     {
+        //         Message = "Um erro aconteceu, tente novamente!",
+        //         DebugMessage = "Size must be greater than 0"
+        //     });
+
+        IEnumerable<RescueEntity> rescues = await _mainRepository.GetPendingRescues();
+
+        return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
+    }
+
+    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListPendingRescuesByProximity(double latitude, double longitude)
+    {
+        // if (page < 1)
+        //     return new BadRequestObjectResult(new ResponseDTO
+        //     {
+        //         DebugMessage = "Page must be greater than 0",
+        //         Message = "Um erro aconteceu, tente novamente!"
+        //     });
+
+        // if (size < 1)
+        //     return new BadRequestObjectResult(new ResponseDTO
+        //     {
+        //         Message = "Um erro aconteceu, tente novamente!",
+        //         DebugMessage = "Size must be greater than 0"
+        //     });
+
+        IEnumerable<RescueEntity> rescues = await _mainRepository.GetPendingRescuesByProximity(latitude, longitude);
+
+        // if (latitude != null && longitude != null)
+        //     rescues = rescues.OrderBy(x => x.GetDistance(latitude.Value, longitude.Value));
+
+        return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
+    }
+
+    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListMyRescues(int page, int size)
+    {
+        // Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
+        // bool rescuer = JwtManager.ExtractPayload<bool>(authToken.Split(' ')[1], LoginClaimsEnum.Rescuer);
+
+        // if (userId == Guid.Empty)
+        //     return new UnauthorizedObjectResult(new ResponseDTO
+        //     {
+        //         DebugMessage = "Invalid token",
+        //         Message = "Ocorreu um erro, tente novamente!"
+        //     });
+
         if (page < 1)
             return new BadRequestObjectResult(new ResponseDTO
             {
@@ -78,46 +135,12 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
                 DebugMessage = "Size must be greater than 0"
             });
 
-        IEnumerable<RescueEntity> rescues = await _mainRepository.GetPendingRescues(page, size);
-
-        if (latitude != null && longitude != null)
-            rescues = rescues.OrderBy(x => x.GetDistance(latitude.Value, longitude.Value));
+        IEnumerable<RescueEntity> rescues = await _mainRepository.GetMyRescues(page, size, /*_userSession.UserIdGuid*/Guid.Empty, _userSession.Rescuer);
 
         return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
     }
 
-    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListMyRescues(int page, int size, string authToken)
-    {
-        Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
-        bool rescuer = JwtManager.ExtractPayload<bool>(authToken.Split(' ')[1], LoginClaimsEnum.Rescuer);
-
-        if (userId == Guid.Empty)
-            return new UnauthorizedObjectResult(new ResponseDTO
-            {
-                DebugMessage = "Invalid token",
-                Message = "Ocorreu um erro, tente novamente!"
-            });
-
-        if (page < 1)
-            return new BadRequestObjectResult(new ResponseDTO
-            {
-                DebugMessage = "Page must be greater than 0",
-                Message = "Um erro aconteceu, tente novamente!"
-            });
-
-        if (size < 1)
-            return new BadRequestObjectResult(new ResponseDTO
-            {
-                Message = "Um erro aconteceu, tente novamente!",
-                DebugMessage = "Size must be greater than 0"
-            });
-
-        IEnumerable<RescueEntity> rescues = await _mainRepository.GetMyRescues(page, size, userId, rescuer);
-
-        return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
-    }
-
-    public async Task<ActionResult<ResponseDTO>> RequestRescue(RescueRequestDTO dto, string authToken)
+    public async Task<ActionResult<ResponseDTO>> RequestRescue(RescueRequestDTO dto)
     {
         if (dto.TotalPeopleNumber <= 0)
             return new BadRequestObjectResult(new ResponseDTO
@@ -133,15 +156,15 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
                 Message = "O número de pessoas não pode ser negativo"
             });
 
-        Guid? userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
-        string? phone = JwtManager.ExtractPayload<string>(authToken.Split(' ')[1], LoginClaimsEnum.Cellphone);
+        // Guid? userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
+        // string? phone = JwtManager.ExtractPayload<string>(authToken.Split(' ')[1], LoginClaimsEnum.Cellphone);
 
-        if (userId == Guid.Empty || string.IsNullOrEmpty(phone))
-            return new UnauthorizedObjectResult(new ResponseDTO
-            {
-                DebugMessage = "Invalid token",
-                Message = "Ocorreu um erro, tente novamente!"
-            });
+        // if (userId == Guid.Empty || string.IsNullOrEmpty(phone))
+        //     return new UnauthorizedObjectResult(new ResponseDTO
+        //     {
+        //         DebugMessage = "Invalid token",
+        //         Message = "Ocorreu um erro, tente novamente!"
+        //     });
 
         RescueEntity entity = new()
         {
@@ -154,8 +177,8 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
             Rescued = false,
-            RequestedBy = userId!.Value,
-            ContactPhone = phone!
+            RequestedBy = Guid.Empty,//userId!.Value,
+            ContactPhone = "1231231"
         };
 
         await _mainRepository.InsertOrUpdate(entity);

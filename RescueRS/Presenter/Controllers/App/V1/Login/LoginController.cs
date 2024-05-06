@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ResgateRS.Attributes;
 using ResgateRS.Domain.Application.Services;
 using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 
@@ -9,7 +10,7 @@ namespace ResgateRS.Presenter.Controllers.App.V1;
 [ApiVersion("1.0")]
 public class LoginController(LoginService service, IServiceProvider serviceProvider) : BaseController<LoginService, IServiceProvider>(service, serviceProvider)
 {
-    [SkipAuthenticationFilter]
+    [SkipAuthentication]
     [HttpPost]
     [MapToApiVersion("1.0")]
     public async Task<ActionResult<LoginResponseDTO>> Login(LoginRequestDTO dto) =>

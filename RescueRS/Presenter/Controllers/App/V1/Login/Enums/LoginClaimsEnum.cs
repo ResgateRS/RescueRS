@@ -1,4 +1,4 @@
-namespace RescueRS.Presenter.Controllers.App.V1.Enums;
+namespace ResgateRS.Presenter.Controllers.App.V1.Enums;
 
 public static class LoginClaimsEnum
 {

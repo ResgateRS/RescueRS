@@ -4,12 +4,11 @@ using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ResgateRS.Tools;
-
 public static class JwtManager
 {
     public static string secret { get; set; } = "";
-    public static string appToken { get; set; } = "";
-    public static double expiration { get; set; } = 5;
+    public static double expirationMinutes { get; set; } = 30;
+
     private static SymmetricSecurityKey key
     {
         get
@@ -18,13 +17,16 @@ public static class JwtManager
         }
     }
 
-    public static string GenerateToken(Dictionary<string, object> userData, DateTime? expirationTime = null)
+    public static string GenerateToken(IJwtPayload userData, DateTime? expirationTime = null)
     {
-        expirationTime = expirationTime ?? DateTime.UtcNow.AddMinutes(expiration);
+        expirationTime = expirationTime ?? DateTime.UtcNow.AddMinutes(expirationMinutes);
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Claims = userData,
+            Claims = new Dictionary<string, object>()
+            {
+                { "userData", userData }
+            },
             Expires = expirationTime,
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature)
         };
@@ -38,8 +40,6 @@ public static class JwtManager
         var tokenHandler = new JwtSecurityTokenHandler();
         try
         {
-            if (appToken.Equals(token))
-                return true;
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -51,27 +51,49 @@ public static class JwtManager
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
         }
-        catch (Exception)
+        catch
         {
             return false;
         }
         return true;
     }
 
-    public static T? ExtractPayload<T>(string token, string key)
+    public static bool IsValidToken<T>(string? token, out T? userData) where T : IJwtPayload
+    {
+        userData = default(T);
+        if (token.IsNullOrEmpty())
+            return false;
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        try
+        {
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                RequireExpirationTime = true,
+                ValidateLifetime = true,
+                IssuerSigningKey = key,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+            if (tokenHandler.CanReadToken(token))
+                userData = JsonSerializer.Deserialize<T>(tokenHandler.ReadJwtToken(token).Payload["userData"].ToString() ?? "");
+        }
+        catch
+        {
+            return false;
+        }
+        return true;
+    }
+
+    public static T? ExtractPayload<T>(string token) where T : IJwtPayload
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         if (tokenHandler.CanReadToken(token))
-        {
-            try
-            {
-                return (T)tokenHandler.ReadJwtToken(token).Payload[key];
-            }
-            catch
-            {
-                return default;
-            }
-        }
-        return default;
+            return JsonSerializer.Deserialize<T>(tokenHandler.ReadJwtToken(token).Payload["userData"].ToString() ?? "");
+        return default(T);
     }
+
+    public class IJwtPayload { }
 }
