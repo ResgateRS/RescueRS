@@ -7,9 +7,8 @@ using ResgateRS.Tools;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class LoginService(UserRepository userRepository, RescueRepository rescueRepository) : BaseService<UserRepository>(userRepository), IService
+public class LoginService(UserRepository userRepository) : BaseService<UserRepository>(userRepository), IService
 {
-    private RescueRepository _rescueRepository = rescueRepository;
     public async Task<ActionResult<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
         if (string.IsNullOrEmpty(dto.Celphone))

@@ -37,7 +37,7 @@ public class ResgateService(RescueRepository resgateRepository) : BaseService<Re
 
         await _mainRepository.InsertOrUpdate(rescue);
 
-        return new OkObjectResult(new ResponseDTO { Message = "Rescue confirmed" });
+        return new OkObjectResult(new ResponseDTO { Message = "Resgate Concluido!" });
     }
 
     public async Task<ActionResult<RescueDTO>> DetailRescue(Guid rescueId)
@@ -141,7 +141,7 @@ public class ResgateService(RescueRepository resgateRepository) : BaseService<Re
 
         RescueEntity entity = new()
         {
-            RequestDateTime = dto.RequestDateTime ?? DateTimeOffset.Now,
+            RequestDateTime = DateTimeOffset.Now,
             TotalPeopleNumber = dto.TotalPeopleNumber,
             ChildrenNumber = dto.ChildrenNumber,
             ElderlyNumber = dto.ElderlyNumber,

@@ -9,7 +9,6 @@ namespace ResgateRS.Presenter.Controllers.App.V1;
 [ApiVersion("1.0")]
 public class RescueController(ResgateService service, IServiceProvider serviceProvider) : BaseController<ResgateService, IServiceProvider>(service, serviceProvider)
 {
-
     [HttpPost("Request")]
     [MapToApiVersion("1.0")]
     public async Task<ActionResult<ResponseDTO>> RequestRescue(RescueRequestDTO dto) =>
