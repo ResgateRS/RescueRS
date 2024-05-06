@@ -31,22 +31,28 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
 
         return await db.Rescues
             .Where(x => !x.Rescued)
-            .OrderBy(x => x.RequestDateTime)
+            .OrderByDescending(x => x.RequestDateTime)
             .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<RescueEntity>> GetPendingRescuesByProximity(double latitude, double longitude)
     {
-        double? lastDistance = await this.db.Rescues
+        RescueEntity? lastRescue = await this.db.Rescues
                         .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
-                        .Select(x => x.GetDistance(latitude, longitude))
+                        // .Select(x => x.GetDistance(latitude, longitude))
                         .FirstOrDefaultAsync();
 
-        return await db.Rescues
+        var rescues = await db.Rescues
             .Where(x => !x.Rescued)
-            .ApplyPagination(this.pagination, x => lastDistance == null || x.GetDistance(latitude, longitude) < lastDistance)
+            .OrderByDescending(x => x.RequestDateTime)
             .ToListAsync();
+
+        return rescues
+            .OrderBy(x => x.GetDistance(latitude, longitude))
+            .AsQueryable()
+            .ApplyPagination(this.pagination, x => lastRescue == null || x.GetDistance(latitude, longitude) > lastRescue.GetDistance(latitude, longitude) || x.RequestDateTime < lastRescue.RequestDateTime)
+            .ToList();
     }
 
     public async Task<IEnumerable<Guid>> GetRescuesByUserId(UserEntity user) =>
@@ -56,12 +62,12 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
             .Select(x => x.RescueId)
             .ToListAsync();
 
-    public async Task<IEnumerable<RescueEntity>> GetMyRescues(int page, int size, Guid userId, bool rescuer) =>
+    public async Task<IEnumerable<RescueEntity>> GetMyRescues(Guid userId, bool rescuer) =>
         await this.db.Rescues
             .Where(x => (!rescuer && x.RequestedBy == userId) ||
                         (rescuer && x.ConfirmedBy == userId))
             // .Skip((page - 1) * size)
-            .ApplyPagination(this.pagination, x => x.RescueId.CompareTo((Guid?)this.pagination.cursor) > 0)
+            // .ApplyPagination(this.pagination, x => x.RescueId.CompareTo((Guid?)this.pagination.cursor) > 0)
             // .Take(size)
             .ToListAsync();
 }

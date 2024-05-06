@@ -35,8 +35,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
 
         rescue.RescueDateTime = DateTimeOffset.Now;
         rescue.Rescued = true;
-        rescue.ConfirmedBy = Guid.Empty;
-        // rescue.ConfirmedBy = userId;
+        rescue.ConfirmedBy = _userSession.UserId;
 
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(rescue);
 
@@ -109,7 +108,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
     }
 
-    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListMyRescues(int page, int size)
+    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListMyRescues()
     {
         // Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
         // bool rescuer = JwtManager.ExtractPayload<bool>(authToken.Split(' ')[1], LoginClaimsEnum.Rescuer);
@@ -121,21 +120,21 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         //         Message = "Ocorreu um erro, tente novamente!"
         //     });
 
-        if (page < 1)
-            return new BadRequestObjectResult(new ResponseDTO
-            {
-                DebugMessage = "Page must be greater than 0",
-                Message = "Um erro aconteceu, tente novamente!"
-            });
+        // if (page < 1)
+        //     return new BadRequestObjectResult(new ResponseDTO
+        //     {
+        //         DebugMessage = "Page must be greater than 0",
+        //         Message = "Um erro aconteceu, tente novamente!"
+        //     });
 
-        if (size < 1)
-            return new BadRequestObjectResult(new ResponseDTO
-            {
-                Message = "Um erro aconteceu, tente novamente!",
-                DebugMessage = "Size must be greater than 0"
-            });
+        // if (size < 1)
+        //     return new BadRequestObjectResult(new ResponseDTO
+        //     {
+        //         Message = "Um erro aconteceu, tente novamente!",
+        //         DebugMessage = "Size must be greater than 0"
+        //     });
 
-        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetMyRescues(page, size, /*_userSession.UserIdGuid*/Guid.Empty, _userSession.Rescuer);
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetMyRescues(_userSession.UserId, _userSession.Rescuer);
 
         return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
     }
@@ -177,8 +176,8 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
             Rescued = false,
-            RequestedBy = Guid.Empty,//userId!.Value,
-            ContactPhone = "1231231"
+            RequestedBy = _userSession.UserId,
+            ContactPhone = _userSession.Cellphone
         };
 
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(entity);

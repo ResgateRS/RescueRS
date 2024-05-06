@@ -31,13 +31,11 @@ public class AuthenticationMiddleware
             // bool optionalAuthenticationAttribute = metadata.GetMetadata<OptionalAuthenticationAttribute>() != null;
 
             if (!skipAuthentication)
-            {
-                var jwtTool = serviceProvider.GetRequiredService<JwtTool>();
-                
+            {   
                 if (!JwtManager.IsValidToken(hashLogin, out UserSession? userSession))
                     throw new MessageException("Login expirado.", ResultType.Error);
 
-                // _userSession.UserIdGuid = userSession!.UserIdGuid;
+                _userSession.UserId = userSession!.UserId;
                 _userSession.Cellphone = userSession!.Cellphone;
                 _userSession.Rescuer = userSession!.Rescuer;
             }

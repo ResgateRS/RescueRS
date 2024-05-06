@@ -36,7 +36,7 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
 
         var userSession = new UserSession
         {
-            UserId = user.UserId.ToString(),
+            UserId = user.UserId,
             Rescuer = user.Rescuer,
             Cellphone = user.Cellphone
         };
