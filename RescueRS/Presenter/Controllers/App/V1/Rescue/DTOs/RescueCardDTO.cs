@@ -12,7 +12,7 @@ public class RescueCardDTO
     public int AnimalsNumber { get; set; }
     public bool Rescued { get; set; }
 
-    internal static RescueDTO FromEntity(RescueEntity entity) =>
+    public static RescueDTO FromEntity(RescueEntity entity) =>
         new()
         {
             RescueId = entity.RescueId,

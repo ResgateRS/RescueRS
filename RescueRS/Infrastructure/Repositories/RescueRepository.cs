@@ -37,7 +37,7 @@ public class RescueRepository(ResgateRSDbContext dbContext) : IRepository
             .Select(x => x.RescueId)
             .ToListAsync();
 
-    internal async Task<IEnumerable<RescueEntity>> GetMyRescues(int page, int size, Guid userId, bool rescuer) =>
+    public async Task<IEnumerable<RescueEntity>> GetMyRescues(int page, int size, Guid userId, bool rescuer) =>
         await this._db.Rescues
             .Where(x => (!rescuer && x.RequestedBy == userId) ||
                         (rescuer && x.ConfirmedBy == userId))

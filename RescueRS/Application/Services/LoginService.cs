@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using RescueRS.Presenter.Controllers.App.V1.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Domain.Application.Services.Interfaces;
 using ResgateRS.Infrastructure.Repositories;
@@ -33,9 +34,9 @@ public class LoginService(UserRepository userRepository) : BaseService<UserRepos
 
         Dictionary<string, object> claims = new()
         {
-            { "UserId", user.UserId },
-            { "Celphone", user.Celphone },
-            { "Rescuer", user.Rescuer }
+            { LoginClaimsEnum.UserId, user.UserId },
+            { LoginClaimsEnum.Celphone, user.Celphone },
+            { LoginClaimsEnum.Rescuer, user.Rescuer }
         };
 
         string token = JwtManager.GenerateToken(claims);

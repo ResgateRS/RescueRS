@@ -16,7 +16,7 @@ public class RescueDTO
     public DateTimeOffset? RescueDateTime { get; set; }
     public string Celphone { get; set; } = null!;
 
-    internal static RescueDTO FromEntity(RescueEntity entity) =>
+    public static RescueDTO FromEntity(RescueEntity entity) =>
         new()
         {
             RescueId = entity.RescueId,

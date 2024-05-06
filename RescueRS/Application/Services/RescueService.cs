@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using RescueRS.Presenter.Controllers.App.V1.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Domain.Application.Services.Interfaces;
 using ResgateRS.Infrastructure.Repositories;
@@ -7,7 +8,7 @@ using ResgateRS.Tools;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class ResgateService(RescueRepository resgateRepository) : BaseService<RescueRepository>(resgateRepository), IService
+public class RescueService(RescueRepository resgateRepository) : BaseService<RescueRepository>(resgateRepository), IService
 {
     public async Task<ActionResult<ResponseDTO>> ConfirmRescue(RescueConfirmDTO dto, string authToken)
     {
@@ -18,7 +19,7 @@ public class ResgateService(RescueRepository resgateRepository) : BaseService<Re
                 Message = "Um erro aconteceu, tente novamente!"
             });
 
-        Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], "UserId");
+        Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
         if (userId == Guid.Empty)
             return new UnauthorizedObjectResult(new ResponseDTO
             {
@@ -31,7 +32,7 @@ public class ResgateService(RescueRepository resgateRepository) : BaseService<Re
         if (rescue == null)
             return new NotFoundObjectResult(new ResponseDTO { Message = "Rescue not found" });
 
-        rescue.RescueDateTime = dto.ConfirmationDateTime ?? DateTimeOffset.Now;
+        rescue.RescueDateTime = DateTimeOffset.Now;
         rescue.Rescued = true;
         rescue.ConfirmedBy = userId;
 
@@ -84,8 +85,8 @@ public class ResgateService(RescueRepository resgateRepository) : BaseService<Re
 
     public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListMyRescues(int page, int size, string authToken)
     {
-        Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], "UserId");
-        bool rescuer = JwtManager.ExtractPayload<bool>(authToken.Split(' ')[1], "Rescuer");
+        Guid userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
+        bool rescuer = JwtManager.ExtractPayload<bool>(authToken.Split(' ')[1], LoginClaimsEnum.Rescuer);
 
         if (userId == Guid.Empty)
             return new UnauthorizedObjectResult(new ResponseDTO
@@ -129,8 +130,8 @@ public class ResgateService(RescueRepository resgateRepository) : BaseService<Re
                 Message = "O número de pessoas não pode ser negativo"
             });
 
-        Guid? userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], "UserId");
-        string? phone = JwtManager.ExtractPayload<string>(authToken.Split(' ')[1], "Celphone");
+        Guid? userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
+        string? phone = JwtManager.ExtractPayload<string>(authToken.Split(' ')[1], LoginClaimsEnum.Celphone);
 
         if (userId == Guid.Empty || string.IsNullOrEmpty(phone))
             return new UnauthorizedObjectResult(new ResponseDTO

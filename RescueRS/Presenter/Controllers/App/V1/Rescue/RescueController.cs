@@ -7,7 +7,7 @@ namespace ResgateRS.Presenter.Controllers.App.V1;
 [ApiController]
 [Route("api/v{version:apiVersion}/Rescue")]
 [ApiVersion("1.0")]
-public class RescueController(ResgateService service, IServiceProvider serviceProvider) : BaseController<ResgateService, IServiceProvider>(service, serviceProvider)
+public class RescueController(RescueService service, IServiceProvider serviceProvider) : BaseController<RescueService, IServiceProvider>(service, serviceProvider)
 {
     [HttpPost("Request")]
     [MapToApiVersion("1.0")]
