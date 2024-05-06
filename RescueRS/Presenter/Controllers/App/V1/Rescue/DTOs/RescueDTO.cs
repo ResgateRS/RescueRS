@@ -14,7 +14,7 @@ public class RescueDTO
     public double Longitude { get; set; }
     public bool Rescued { get; set; }
     public DateTimeOffset? RescueDateTime { get; set; }
-    public string Celphone { get; set; } = null!;
+    public string Cellphone { get; set; } = null!;
 
     public static RescueDTO FromEntity(RescueEntity entity) =>
         new()

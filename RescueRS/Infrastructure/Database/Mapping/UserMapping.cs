@@ -11,6 +11,6 @@ public class UserMapping : IEntityTypeConfiguration<UserEntity>
 
         builder.Property(e => e.UserId);
         builder.Property(e => e.Rescuer);
-        builder.Property(e => e.Celphone);
+        builder.Property(e => e.Cellphone);
     }
 }

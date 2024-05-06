@@ -4,5 +4,5 @@ public class UserEntity
 {
     public Guid UserId { get; set; }
     public bool Rescuer { get; set; }
-    public string Celphone { get; set; } = null!;
+    public string Cellphone { get; set; } = null!;
 }

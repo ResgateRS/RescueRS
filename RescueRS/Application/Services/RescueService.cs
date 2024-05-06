@@ -62,7 +62,7 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
         return new OkObjectResult(RescueDTO.FromEntity(rescue));
     }
 
-    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListPendingRescues(int page, int size)
+    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListPendingRescues(int page, int size, double? latitude, double? longitude)
     {
         if (page < 1)
             return new BadRequestObjectResult(new ResponseDTO
@@ -79,6 +79,9 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
             });
 
         IEnumerable<RescueEntity> rescues = await _mainRepository.GetPendingRescues(page, size);
+
+        if (latitude != null && longitude != null)
+            rescues = rescues.OrderBy(x => x.GetDistance(latitude.Value, longitude.Value));
 
         return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
     }
@@ -131,7 +134,7 @@ public class RescueService(RescueRepository resgateRepository) : BaseService<Res
             });
 
         Guid? userId = JwtManager.ExtractPayload<Guid>(authToken.Split(' ')[1], LoginClaimsEnum.UserId);
-        string? phone = JwtManager.ExtractPayload<string>(authToken.Split(' ')[1], LoginClaimsEnum.Celphone);
+        string? phone = JwtManager.ExtractPayload<string>(authToken.Split(' ')[1], LoginClaimsEnum.Cellphone);
 
         if (userId == Guid.Empty || string.IsNullOrEmpty(phone))
             return new UnauthorizedObjectResult(new ResponseDTO

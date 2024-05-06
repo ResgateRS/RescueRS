@@ -16,4 +16,7 @@ public class RescueEntity
     public Guid ConfirmedBy { get; set; }
     public Guid RequestedBy { get; set; }
     public string ContactPhone { get; set; } = null!;
+    internal double GetDistance(double latitude, double longitude) {
+        return Math.Sqrt(Math.Pow(Latitude - latitude, 2) + Math.Pow(Longitude - longitude, 2));
+    }
 }

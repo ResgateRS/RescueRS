@@ -11,7 +11,7 @@ public class UserRepository(ResgateRSDbContext dbContext) : IRepository
 
     public async Task<UserEntity?> GetUser(LoginRequestDTO dto) =>
         await this._db.Users
-            .FirstOrDefaultAsync(e => e.Celphone == dto.Celphone && e.Rescuer == dto.Rescuer);
+            .FirstOrDefaultAsync(e => e.Cellphone == dto.Cellphone && e.Rescuer == dto.Rescuer);
 
     public async Task<UserEntity> InsertOrUpdate(UserEntity user)
     {

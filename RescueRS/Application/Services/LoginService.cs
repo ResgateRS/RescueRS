@@ -12,7 +12,7 @@ public class LoginService(UserRepository userRepository) : BaseService<UserRepos
 {
     public async Task<ActionResult<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
-        if (string.IsNullOrEmpty(dto.Celphone))
+        if (string.IsNullOrEmpty(dto.Cellphone))
             return new BadRequestObjectResult(new ResponseDTO
             {
                 DebugMessage = "Telefone é necessário",
@@ -25,7 +25,7 @@ public class LoginService(UserRepository userRepository) : BaseService<UserRepos
         {
             user = new UserEntity
             {
-                Celphone = dto.Celphone,
+                Cellphone = dto.Cellphone,
                 Rescuer = dto.Rescuer,
             };
 
@@ -35,7 +35,7 @@ public class LoginService(UserRepository userRepository) : BaseService<UserRepos
         Dictionary<string, object> claims = new()
         {
             { LoginClaimsEnum.UserId, user.UserId },
-            { LoginClaimsEnum.Celphone, user.Celphone },
+            { LoginClaimsEnum.Cellphone, user.Cellphone },
             { LoginClaimsEnum.Rescuer, user.Rescuer }
         };
 
