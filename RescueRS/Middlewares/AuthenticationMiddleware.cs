@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using ResgateRS.Core.DTOs;
+using ResgateRS.DTOs;
 using ResgateRS.Tools;
 using ResgateRS.Auth;
 using Microsoft.AspNetCore.Http.Features;

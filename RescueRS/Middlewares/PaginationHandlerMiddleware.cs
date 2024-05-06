@@ -1,4 +1,4 @@
-using Apps4Business.Core.Extensions;
+using ResgateRS.Extensions;
 using Microsoft.AspNetCore.Http.Features;
 using ResgateRS.Attributes;
 using ResgateRS.Pagination;

@@ -1,4 +1,4 @@
-namespace ResgateRS.Core.DTOs;
+namespace ResgateRS.DTOs;
 
 public enum ResultType
 {

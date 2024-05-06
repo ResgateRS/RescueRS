@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Apps4Business.Core.Extensions;
+namespace ResgateRS.Extensions;
 
 public static class StringExtensions
 {

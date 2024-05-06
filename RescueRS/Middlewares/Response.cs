@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace ResgateRS.Core.DTOs;
+namespace ResgateRS.DTOs;
 
 public class Response<T> : IResponse<T>
 {

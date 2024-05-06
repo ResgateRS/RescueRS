@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using ResgateRS.Core.DTOs;
+using ResgateRS.DTOs;
 
 namespace ResgateRS.Middleware;
 
