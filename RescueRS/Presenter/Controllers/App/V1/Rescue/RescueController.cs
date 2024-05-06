@@ -24,9 +24,9 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListMyRescues(int page, int size) =>
         await this.mainService.ListMyRescues(page, size, Request.Headers.Authorization.ToString());
 
-    [HttpGet("ListPengingRescues")]
+    [HttpGet("ListPendingRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListPengingRescues(int page, int size) =>
+    public async Task<ActionResult<IEnumerable<RescueCardDTO>>> ListPendingRescues(int page, int size) =>
         await this.mainService.ListPendingRescues(page, size);
 
     [HttpGet("Details")]
