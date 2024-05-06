@@ -18,7 +18,8 @@ public class RescueMapping : IEntityTypeConfiguration<RescueEntity>
         builder.Property(e => e.AnimalsNumber);
         builder.Property(e => e.Latitude);
         builder.Property(e => e.Longitude);
-        builder.Property(e => e.Rescued);
+        builder.Property(e => e.Rescued)
+            .HasConversion<byte>();
         builder.Property(e => e.RescueDateTime);
     }
 }

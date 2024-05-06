@@ -62,8 +62,8 @@ namespace ResgateRS.Infrastructure.Database.Migrations
                     b.Property<DateTimeOffset?>("RescueDateTime")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
-                    b.Property<bool>("Rescued")
-                        .HasColumnType("BOOLEAN");
+                    b.Property<byte>("Rescued")
+                        .HasColumnType("NUMBER(3)");
 
                     b.Property<int>("TotalPeopleNumber")
                         .HasColumnType("NUMBER(10)");
@@ -83,8 +83,8 @@ namespace ResgateRS.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<bool>("Rescuer")
-                        .HasColumnType("BOOLEAN");
+                    b.Property<byte>("Rescuer")
+                        .HasColumnType("NUMBER(3)");
 
                     b.HasKey("UserId");
 

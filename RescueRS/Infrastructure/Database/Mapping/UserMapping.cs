@@ -10,7 +10,8 @@ public class UserMapping : IEntityTypeConfiguration<UserEntity>
         builder.HasKey(e => e.UserId);
 
         builder.Property(e => e.UserId);
-        builder.Property(e => e.Rescuer);
+        builder.Property(e => e.Rescuer)
+            .HasConversion<byte>();
         builder.Property(e => e.Cellphone);
     }
 }

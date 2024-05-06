@@ -24,7 +24,7 @@ namespace ResgateRS.Infrastructure.Database.Migrations
                     AnimalsNumber = table.Column<int>(type: "NUMBER(10)", nullable: false),
                     Latitude = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
                     Longitude = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    Rescued = table.Column<bool>(type: "BOOLEAN", nullable: false),
+                    Rescued = table.Column<byte>(type: "NUMBER(3)", nullable: false),
                     RescueDateTime = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true),
                     ConfirmedBy = table.Column<Guid>(type: "RAW(16)", nullable: false),
                     RequestedBy = table.Column<Guid>(type: "RAW(16)", nullable: false),
@@ -40,8 +40,8 @@ namespace ResgateRS.Infrastructure.Database.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<Guid>(type: "RAW(16)", nullable: false),
-                    Rescuer = table.Column<bool>(type: "BOOLEAN", nullable: false),
-                    Celphone = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false)
+                    Rescuer = table.Column<byte>(type: "NUMBER(3)", nullable: false),
+                    Cellphone = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -12,7 +12,7 @@ using ResgateRS.Infrastructure.Database;
 namespace ResgateRS.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ResgateRSDbContext))]
-    [Migration("20240506165400_Initial")]
+    [Migration("20240506185147_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -65,8 +65,8 @@ namespace ResgateRS.Infrastructure.Database.Migrations
                     b.Property<DateTimeOffset?>("RescueDateTime")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
-                    b.Property<bool>("Rescued")
-                        .HasColumnType("BOOLEAN");
+                    b.Property<byte>("Rescued")
+                        .HasColumnType("NUMBER(3)");
 
                     b.Property<int>("TotalPeopleNumber")
                         .HasColumnType("NUMBER(10)");
@@ -82,12 +82,12 @@ namespace ResgateRS.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("RAW(16)");
 
-                    b.Property<string>("Celphone")
+                    b.Property<string>("Cellphone")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<bool>("Rescuer")
-                        .HasColumnType("BOOLEAN");
+                    b.Property<byte>("Rescuer")
+                        .HasColumnType("NUMBER(3)");
 
                     b.HasKey("UserId");
 
