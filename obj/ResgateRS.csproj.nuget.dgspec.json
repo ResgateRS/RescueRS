@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj": {}
+    "c:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj": {}
   },
   "projects": {
-    "C:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj": {
+    "c:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj",
+        "projectUniqueName": "c:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj",
         "projectName": "ResgateRS",
-        "projectPath": "C:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj",
+        "projectPath": "c:\\dev\\resgate-rs\\ResgateRS\\ResgateRS.csproj",
         "packagesPath": "C:\\Users\\caiom\\.nuget\\packages\\",
-        "outputPath": "C:\\dev\\resgate-rs\\ResgateRS\\obj\\",
+        "outputPath": "c:\\dev\\resgate-rs\\ResgateRS\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\dev\\resgate-rs\\NuGet.Config",
+          "c:\\dev\\resgate-rs\\NuGet.Config",
           "C:\\Users\\caiom\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
@@ -74,9 +74,9 @@
               "target": "Package",
               "version": "[8.0.4, )"
             },
-            "Microsoft.EntityFrameworkCore.SqlServer": {
+            "Oracle.EntityFrameworkCore": {
               "target": "Package",
-              "version": "[8.0.4, )"
+              "version": "[8.23.40, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",

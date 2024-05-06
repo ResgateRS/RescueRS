@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ResgateRS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+468f02e1a4672cbbfc49a2dc30532987c5054585")]
 [assembly: System.Reflection.AssemblyProductAttribute("ResgateRS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ResgateRS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

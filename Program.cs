@@ -61,7 +61,7 @@ void ConfigureServices(IServiceCollection services)
     services.AddEndpointsApiExplorer();
     services.AddSwaggerGen();
 
-    services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("ResgateRSDbContext")));
+    services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseOracle(builder.Configuration.GetConnectionString("ResgateRSDbContext")));
 
     services.RegisterRepositoriesAndServices();
 }
