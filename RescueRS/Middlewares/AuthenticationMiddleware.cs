@@ -18,7 +18,7 @@ public class AuthenticationMiddleware
     public AuthenticationMiddleware(RequestDelegate next) =>
         (_next) = (next);
 
-    public async Task InvokeAsync(HttpContext context, UserSession _userSession)
+    public async Task InvokeAsync(HttpContext context, UserSession _userSession, IServiceProvider serviceProvider)
     {
 
         string hashLogin = context.Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "") ?? "";
@@ -32,6 +32,8 @@ public class AuthenticationMiddleware
 
             if (!skipAuthentication)
             {
+                var jwtTool = serviceProvider.GetRequiredService<JwtTool>();
+                
                 if (!JwtManager.IsValidToken(hashLogin, out UserSession? userSession))
                     throw new MessageException("Login expirado.", ResultType.Error);
 

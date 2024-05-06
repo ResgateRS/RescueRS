@@ -9,7 +9,7 @@ using ResgateRS.Auth;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class RescueService(RescueRepository resgateRepository, UserSession userSession) : BaseService<RescueRepository>(resgateRepository, userSession), IService
+public class RescueService(IServiceProvider serviceProvider, UserSession userSession) : BaseService(serviceProvider, userSession), IService
 {
     public async Task<ActionResult<ResponseDTO>> ConfirmRescue(RescueConfirmDTO dto)
     {
@@ -28,7 +28,7 @@ public class RescueService(RescueRepository resgateRepository, UserSession userS
         //         Message = "Ocorreu um erro, tente novamente!"
         //     });
 
-        RescueEntity? rescue = await _mainRepository.GetRescueById(dto.RescueId);
+        RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(dto.RescueId);
 
         if (rescue == null)
             return new NotFoundObjectResult(new ResponseDTO { Message = "Rescue not found" });
@@ -38,7 +38,7 @@ public class RescueService(RescueRepository resgateRepository, UserSession userS
         rescue.ConfirmedBy = Guid.Empty;
         // rescue.ConfirmedBy = userId;
 
-        await _mainRepository.InsertOrUpdate(rescue);
+        await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(rescue);
 
         return new OkObjectResult(new ResponseDTO { Message = "Resgate Concluido!" });
     }
@@ -52,7 +52,7 @@ public class RescueService(RescueRepository resgateRepository, UserSession userS
                 Message = "Um erro aconteceu, tente novamente!"
             });
 
-        RescueEntity? rescue = await _mainRepository.GetRescueById(rescueId);
+        RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(rescueId);
 
         if (rescue == null)
             return new NotFoundObjectResult(new ResponseDTO
@@ -80,7 +80,7 @@ public class RescueService(RescueRepository resgateRepository, UserSession userS
         //         DebugMessage = "Size must be greater than 0"
         //     });
 
-        IEnumerable<RescueEntity> rescues = await _mainRepository.GetPendingRescues();
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetPendingRescues();
 
         return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
     }
@@ -101,7 +101,7 @@ public class RescueService(RescueRepository resgateRepository, UserSession userS
         //         DebugMessage = "Size must be greater than 0"
         //     });
 
-        IEnumerable<RescueEntity> rescues = await _mainRepository.GetPendingRescuesByProximity(latitude, longitude);
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetPendingRescuesByProximity(latitude, longitude);
 
         // if (latitude != null && longitude != null)
         //     rescues = rescues.OrderBy(x => x.GetDistance(latitude.Value, longitude.Value));
@@ -135,7 +135,7 @@ public class RescueService(RescueRepository resgateRepository, UserSession userS
                 DebugMessage = "Size must be greater than 0"
             });
 
-        IEnumerable<RescueEntity> rescues = await _mainRepository.GetMyRescues(page, size, /*_userSession.UserIdGuid*/Guid.Empty, _userSession.Rescuer);
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetMyRescues(page, size, /*_userSession.UserIdGuid*/Guid.Empty, _userSession.Rescuer);
 
         return new OkObjectResult(rescues.Select(RescueCardDTO.FromEntity));
     }
@@ -181,7 +181,7 @@ public class RescueService(RescueRepository resgateRepository, UserSession userS
             ContactPhone = "1231231"
         };
 
-        await _mainRepository.InsertOrUpdate(entity);
+        await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(entity);
 
         return new OkObjectResult(new ResponseDTO { Message = "Solicitação de Resgate Registrada!" });
     }

@@ -9,7 +9,7 @@ using ResgateRS.Auth;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class LoginService(UserRepository userRepository, UserSession userSession) : BaseService<UserRepository>(userRepository, userSession), IService
+public class LoginService(IServiceProvider serviceProvider, UserSession userSession) : BaseService(serviceProvider, userSession), IService
 {
     public async Task<ActionResult<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
@@ -20,7 +20,7 @@ public class LoginService(UserRepository userRepository, UserSession userSession
                 Message = "An error occurred, try again!"
             });
 
-        UserEntity? user = await _mainRepository.GetUser(dto);
+        UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 
         if (user == null)
         {
@@ -30,7 +30,7 @@ public class LoginService(UserRepository userRepository, UserSession userSession
                 Rescuer = dto.Rescuer,
             };
 
-            user = await _mainRepository.InsertOrUpdate(user);
+            user = await _serviceProvider.GetRequiredService<UserRepository>().InsertOrUpdate(user);
         }
 
 
@@ -41,7 +41,9 @@ public class LoginService(UserRepository userRepository, UserSession userSession
             Cellphone = user.Cellphone
         };
 
-        string token = JwtManager.GenerateToken(userSession);
+        var jwt = _serviceProvider.GetRequiredService<JwtTool>();
+        jwt.setUserData(userSession);
+        string token = jwt.generateToken();
 
         return new OkObjectResult(new LoginResponseDTO
         {

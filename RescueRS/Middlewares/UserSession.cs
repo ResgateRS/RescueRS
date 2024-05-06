@@ -4,7 +4,7 @@ namespace ResgateRS.Auth;
 
 public class UserSession : IJwtPayload
 {   
-    public string UserId { get; set; } = null!;
+    public string UserId { get; set; } = string.Empty;
     public bool Rescuer { get; set; }
-    public string Cellphone { get; set; } = null!;
+    public string Cellphone { get; set; } = string.Empty;
 }

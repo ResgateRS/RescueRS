@@ -81,6 +81,16 @@ void ConfigureServices(IServiceCollection services)
     services.AddScoped<UserSession>();
 
     services.AddScoped<PaginationDTO>();
+
+    services.AddTransient(provider =>
+        {
+            int expiresInMinutes = int.Parse(builder.Configuration["AuthenticationSettings:ExpiresInMinutes"]!);
+            long expiresTimestamp = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes).ToUnixTimeSeconds();
+            JwtTool jwt = new JwtTool();
+            jwt.setExpires(expiresTimestamp);
+            jwt.setSecret(builder.Configuration["AuthenticationSettings:TokenSecret"]!);
+            return jwt;
+        });
 }
 
 void Configure(WebApplication app)

@@ -2,14 +2,14 @@
 
 namespace ResgateRS.Domain.Application.Services
 {
-    public class BaseService<Repository>
+    public class BaseService
     {
-        protected readonly Repository _mainRepository;
+        protected readonly IServiceProvider _serviceProvider;
         
         protected readonly UserSession _userSession;
 
-        public BaseService(Repository repository, UserSession userSession) => 
-            (this._mainRepository, _userSession) = (repository, userSession);
+        public BaseService(IServiceProvider serviceProvider, UserSession userSession) => 
+            (this._serviceProvider, _userSession) = (serviceProvider, userSession);
 
         public string GetExceptionMessage(Exception ex)
         {
