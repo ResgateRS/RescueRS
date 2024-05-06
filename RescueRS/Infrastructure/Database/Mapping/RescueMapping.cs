@@ -19,7 +19,9 @@ public class RescueMapping : IEntityTypeConfiguration<RescueEntity>
         builder.Property(e => e.Latitude);
         builder.Property(e => e.Longitude);
         builder.Property(e => e.Rescued)
-            .HasConversion<byte>();
+            .HasConversion(
+                v => v ? 1 : 0, // Convert TRUE to 1, FALSE to 0
+                v => v == 1); // Convert 1 back to TRUE, anything else to FALSE
         builder.Property(e => e.RescueDateTime);
     }
 }

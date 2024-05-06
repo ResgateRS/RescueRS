@@ -11,7 +11,9 @@ public class UserMapping : IEntityTypeConfiguration<UserEntity>
 
         builder.Property(e => e.UserId);
         builder.Property(e => e.Rescuer)
-            .HasConversion<byte>();
+            .HasConversion(
+                v => v ? 1 : 0, // Convert TRUE to 1, FALSE to 0
+                v => v == 1); // Convert 1 back to TRUE, anything else to FALSE
         builder.Property(e => e.Cellphone);
     }
 }
