@@ -6,19 +6,16 @@ using ResgateRS.Infrastructure.Repositories;
 using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 using ResgateRS.Tools;
 using ResgateRS.Auth;
+using ResgateRS.DTOs;
 
 namespace ResgateRS.Domain.Application.Services;
 
 public class LoginService(IServiceProvider serviceProvider, UserSession userSession) : BaseService(serviceProvider, userSession), IService
 {
-    public async Task<ActionResult<LoginResponseDTO>> handle(LoginRequestDTO dto)
+    public async Task<IResponse<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
         if (string.IsNullOrEmpty(dto.Cellphone))
-            return new BadRequestObjectResult(new ResponseDTO
-            {
-                DebugMessage = "Telefone é necessário",
-                Message = "An error occurred, try again!"
-            });
+            throw new Exception("Telefone é necessário");
 
         UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 
@@ -33,7 +30,6 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
             user = await _serviceProvider.GetRequiredService<UserRepository>().InsertOrUpdate(user);
         }
 
-
         var userSession = new UserSession
         {
             UserId = user.UserId,
@@ -45,10 +41,6 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
         jwt.setUserData(userSession);
         string token = jwt.generateToken();
 
-        return new OkObjectResult(new LoginResponseDTO
-        {
-            Token = token,
-            Rescuer = user.Rescuer
-        });
+        return Response.Success(new LoginResponseDTO { Token = token, Rescuer = user.Rescuer });
     }
 }
