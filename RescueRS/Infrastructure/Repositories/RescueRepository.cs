@@ -42,6 +42,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
                         .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
                         // .Select(x => x.GetDistance(latitude, longitude))
                         .FirstOrDefaultAsync();
+        double? lastDistance = lastRescue?.GetDistance(latitude, longitude);
 
         var rescues = await db.Rescues
             .Where(x => !x.Rescued)
@@ -51,7 +52,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
         return rescues
             .OrderBy(x => x.GetDistance(latitude, longitude))
             .AsQueryable()
-            .ApplyPagination(this.pagination, x => lastRescue == null || x.GetDistance(latitude, longitude) > lastRescue.GetDistance(latitude, longitude) || x.RequestDateTime < lastRescue.RequestDateTime)
+            .ApplyPagination(this.pagination, x => lastRescue == null || x.GetDistance(latitude, longitude) > lastDistance || (x.GetDistance(latitude, longitude) == lastDistance && x.RequestDateTime < lastRescue.RequestDateTime))
             .ToList();
     }
 
