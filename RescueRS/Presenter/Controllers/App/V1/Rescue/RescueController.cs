@@ -24,25 +24,25 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListMyRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListMyRescues() =>
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListMyRescues() =>
         await this.mainService.ListMyRescues();
 
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListPendingRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListPendingRescues() =>
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues() =>
         await this.mainService.ListPendingRescues();
 
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListPendingRescuesByProximity")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListPendingRescuesByProximity(double latitude, double longitude) =>
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescuesByProximity(double latitude, double longitude) =>
         await this.mainService.ListPendingRescuesByProximity(latitude, longitude);
 
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListCompletedRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListCompletedRescues() =>
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListCompletedRescues() =>
         await this.mainService.ListCompletedRescues();
 
     [HttpGet("Details")]

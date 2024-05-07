@@ -15,8 +15,9 @@ public class RescueDTO
     public bool Rescued { get; set; }
     public DateTimeOffset? RescueDateTime { get; set; }
     public string Cellphone { get; set; } = null!;
+    public double? distance { get; set; }
 
-    public static RescueDTO FromEntity(RescueEntity entity) =>
+    internal static RescueDTO FromEntity(RescueEntity entity, double? latitude = null, double? longitude = null) =>
         new()
         {
             RescueId = entity.RescueId,
@@ -29,6 +30,10 @@ public class RescueDTO
             Latitude = entity.Latitude,
             Longitude = entity.Longitude,
             Rescued = entity.Rescued,
-            RescueDateTime = entity.RescueDateTime
+            RescueDateTime = entity.RescueDateTime,
+            distance = latitude != null && longitude != null ? GetDistance(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
         };
+
+    internal static double GetDistance(double latitude, double longitude, double entityLatitude, double entityLongitude) =>
+        Math.Sqrt(Math.Pow(entityLatitude - latitude, 2) + Math.Pow(entityLongitude - longitude, 2));
 }
