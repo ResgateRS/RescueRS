@@ -103,6 +103,8 @@ void Configure(WebApplication app)
 
     app.UseMiddleware<PaginationHandlerMiddleware>();
 
+    app.UseMiddleware<CorsHeaderMiddleware>();
+
     app.UseSwagger();
     app.UseSwaggerUI();
 

@@ -10,13 +10,9 @@ using ResgateRS.Attributes;
 
 namespace ResgateRS.Middleware;
 
-public class AuthenticationMiddleware
+public class AuthenticationMiddleware(RequestDelegate next)
 {
-
-    private readonly RequestDelegate _next;
-
-    public AuthenticationMiddleware(RequestDelegate next) =>
-        (_next) = (next);
+    private readonly RequestDelegate _next = next;
 
     public async Task InvokeAsync(HttpContext context, UserSession _userSession, IServiceProvider serviceProvider)
     {

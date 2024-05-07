@@ -5,13 +5,9 @@ using ResgateRS.Pagination;
 
 namespace ResgateRS.Middleware;
 
-public class PaginationHandlerMiddleware
+public class PaginationHandlerMiddleware(RequestDelegate next)
 {
-
-    private readonly RequestDelegate _next;
-
-    public PaginationHandlerMiddleware(RequestDelegate next) =>
-        (_next) = (next);
+    private readonly RequestDelegate _next = next;
 
     public async Task InvokeAsync(HttpContext context, PaginationDTO _pagination)
     {

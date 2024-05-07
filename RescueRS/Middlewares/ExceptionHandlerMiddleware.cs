@@ -4,12 +4,9 @@ using ResgateRS.DTOs;
 
 namespace ResgateRS.Middleware;
 
-public class ExceptionHandlerMiddleware {
-
-    private readonly RequestDelegate _next;
-
-    public ExceptionHandlerMiddleware(RequestDelegate next) =>
-        (_next) = (next);
+public class ExceptionHandlerMiddleware(RequestDelegate next)
+{
+    private readonly RequestDelegate _next = next;
 
     public async Task InvokeAsync(HttpContext context) {
         try {
