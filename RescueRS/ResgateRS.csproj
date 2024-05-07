@@ -22,4 +22,15 @@
     <PackageReference Include="Oracle.EntityFrameworkCore" Version="8.23.40" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="cwallet.sso" CopyToOutputDirectory="Always" />
+    <None Include="ewallet.p12" CopyToOutputDirectory="Always" />
+    <None Include="ewallet.pem" CopyToOutputDirectory="Always" />
+    <None Include="keystore.jks" CopyToOutputDirectory="Always" />
+    <None Include="ojdbc.properties" CopyToOutputDirectory="Always" />
+    <None Include="sqlnet.ora" CopyToOutputDirectory="Always" />
+    <None Include="tnsnames.ora" CopyToOutputDirectory="Always" />
+    <None Include="truststore.jks" CopyToOutputDirectory="Always" />
+  </ItemGroup>
 </Project>

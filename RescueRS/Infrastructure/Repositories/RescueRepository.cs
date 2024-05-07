@@ -80,8 +80,8 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
         await this.db.Rescues
             .Where(x => (!rescuer && x.RequestedBy == userId) ||
                         (rescuer && x.ConfirmedBy == userId))
+            .ApplyPagination(this.pagination, x => x.RescueId.CompareTo((Guid?)this.pagination.cursor) > 0)
             // .Skip((page - 1) * size)
-            // .ApplyPagination(this.pagination, x => x.RescueId.CompareTo((Guid?)this.pagination.cursor) > 0)
             // .Take(size)
             .ToListAsync();
 }
