@@ -31,9 +31,31 @@ public class RescueDTO
             Longitude = entity.Longitude,
             Rescued = entity.Rescued,
             RescueDateTime = entity.RescueDateTime,
-            distance = latitude != null && longitude != null ? GetDistance(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
+            distance = latitude != null && longitude != null ? GetDistanceInMeters(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
         };
 
-    internal static double GetDistance(double latitude, double longitude, double entityLatitude, double entityLongitude) =>
-        Math.Sqrt(Math.Pow(entityLatitude - latitude, 2) + Math.Pow(entityLongitude - longitude, 2));
+    private const double EarthRadiusKm = 6371.0;
+
+    private static double ToRadians(double degrees) => degrees * Math.PI / 180.0;
+
+    public static double GetDistanceInMeters(double latitude, double longitude, double entityLatitude, double entityLongitude)
+    {
+        if (latitude == entityLatitude && longitude == entityLongitude)
+            return 0;
+
+        double lat1 = ToRadians(latitude);
+        double lon1 = ToRadians(longitude);
+        double lat2 = ToRadians(entityLatitude);
+        double lon2 = ToRadians(entityLongitude);
+
+        double deltaLat = lat2 - lat1;
+        double deltaLon = lon2 - lon1;
+
+        double a = Math.Pow(Math.Sin(deltaLat / 2), 2) +
+                   Math.Cos(lat1) * Math.Cos(lat2) * Math.Pow(Math.Sin(deltaLon / 2), 2);
+
+        double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+        return EarthRadiusKm * c * 1000;
+    }
 }
