@@ -40,7 +40,6 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
     {
         RescueEntity? lastRescue = await this.db.Rescues
                         .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
-                        // .Select(x => x.GetDistance(latitude, longitude))
                         .FirstOrDefaultAsync();
         double? lastDistance = lastRescue?.GetDistance(latitude, longitude);
 
@@ -54,6 +53,20 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
             .AsQueryable()
             .ApplyPagination(this.pagination, x => lastRescue == null || x.GetDistance(latitude, longitude) > lastDistance || (x.GetDistance(latitude, longitude) == lastDistance && x.RequestDateTime < lastRescue.RequestDateTime))
             .ToList();
+    }
+
+    public async Task<IEnumerable<RescueEntity>> GetCompletedRescues()
+    {
+        DateTimeOffset? lastDate = await this.db.Rescues
+                        .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
+                        .Select(x => (DateTimeOffset?)x.RequestDateTime)
+                        .FirstOrDefaultAsync();
+
+        return await db.Rescues
+            .Where(x => x.Rescued)
+            .OrderByDescending(x => x.RequestDateTime)
+            .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<Guid>> GetRescuesByUserId(UserEntity user) =>

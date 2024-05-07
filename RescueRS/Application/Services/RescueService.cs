@@ -7,6 +7,7 @@ using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 using ResgateRS.Tools;
 using ResgateRS.Auth;
 using ResgateRS.DTOs;
+using ResgateRS.Middleware;
 
 namespace ResgateRS.Domain.Application.Services;
 
@@ -17,10 +18,12 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (dto.RescueId == Guid.Empty)
             throw new Exception("RescueId is required");
 
-        RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(dto.RescueId);
-
-        if (rescue == null)
+        RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(dto.RescueId) ??
             throw new Exception("Rescue not found");
+        
+        //TODO: rever essa regra
+        if (_userSession.Rescuer == false && rescue.RequestedBy != _userSession.UserId)       
+            throw new MessageException("Você não tem permissão para confirmar este resgate");
 
         rescue.RescueDateTime = DateTimeOffset.Now;
         rescue.Rescued = true;
@@ -54,6 +57,13 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
     public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListPendingRescuesByProximity(double latitude, double longitude)
     {
         IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetPendingRescuesByProximity(latitude, longitude);
+
+        return Response.Success(rescues.Select(RescueCardDTO.FromEntity));
+    }
+
+    public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListCompletedRescues()
+    {
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetCompletedRescues();
 
         return Response.Success(rescues.Select(RescueCardDTO.FromEntity));
     }

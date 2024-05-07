@@ -39,14 +39,15 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListPendingRescuesByProximity(double latitude, double longitude) =>
         await this.mainService.ListPendingRescuesByProximity(latitude, longitude);
 
+    [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
+    [HttpGet("ListCompletedRescues")]
+    [MapToApiVersion("1.0")]
+    public async Task<IResponse<IEnumerable<RescueCardDTO>>> ListCompletedRescues() =>
+        await this.mainService.ListCompletedRescues();
+
     [HttpGet("Details")]
     [MapToApiVersion("1.0")]
     public async Task<IResponse<RescueDTO>> DetailRescue(Guid rescueId) =>
         await this.mainService.DetailRescue(rescueId);
-
-    //     [HttpGet("Details")]
-    // [MapToApiVersion("1.0")]
-    // public async Task<RescueDTO>> GuidTest(Guid? rescueId) =>
-    //     await this.mainService.GuidTest(rescueId);
 }
 
