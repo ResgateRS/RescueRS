@@ -29,7 +29,7 @@ public class PaginationHandlerMiddleware(RequestDelegate next)
                 case PaginationType.Cursor:
                     if (page != null)
                         throw new Exception("Número de página informada em paginação por cursor.");
-                    if (cursor != null)
+                    if (!String.IsNullOrEmpty(cursor))
                     {
                         var converter = System.ComponentModel.TypeDescriptor.GetConverter(pagination.Type);
                         object? result = null;
