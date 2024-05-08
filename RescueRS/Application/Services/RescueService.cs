@@ -77,7 +77,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
 
     public async Task<IResponse<ResponseDTO>> RequestRescue(RescueRequestDTO dto)
     {
-        if (_userSession.Rescuer == true)
+        if (_userSession.Rescuer)
             throw new Exception("Rescuer cannot request rescue");
 
         if (dto.TotalPeopleNumber <= 0)
