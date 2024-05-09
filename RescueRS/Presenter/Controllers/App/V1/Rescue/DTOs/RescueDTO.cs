@@ -5,7 +5,7 @@ public class RescueDTO
 {
     public Guid RescueId { get; set; }
     public DateTimeOffset? RequestDateTime { get; set; }
-    public int TotalPeopleNumber { get; set; }
+    public int AdultsNumber { get; set; }
     public int ChildrenNumber { get; set; }
     public int ElderlyNumber { get; set; }
     public int DisabledNumber { get; set; }
@@ -22,7 +22,7 @@ public class RescueDTO
         {
             RescueId = entity.RescueId,
             RequestDateTime = entity.RequestDateTime,
-            TotalPeopleNumber = entity.AdultsNumber,
+            AdultsNumber = entity.AdultsNumber,
             ChildrenNumber = entity.ChildrenNumber,
             ElderlyNumber = entity.ElderlyNumber,
             DisabledNumber = entity.DisabledNumber,
