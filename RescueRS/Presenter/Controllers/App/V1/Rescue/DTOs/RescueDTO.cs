@@ -31,6 +31,7 @@ public class RescueDTO
             Longitude = entity.Longitude,
             Rescued = entity.Rescued,
             RescueDateTime = entity.RescueDateTime,
+            Cellphone = entity.ContactPhone,
             distance = latitude != null && longitude != null ? GetDistanceInMeters(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
         };
 

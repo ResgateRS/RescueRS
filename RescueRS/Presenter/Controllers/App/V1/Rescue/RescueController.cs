@@ -30,8 +30,8 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListPendingRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues() =>
-        await this.mainService.ListPendingRescues();
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues(double? latitude, double? longitude) =>
+        await this.mainService.ListPendingRescues(latitude, longitude);
 
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListPendingRescuesByProximity")]
