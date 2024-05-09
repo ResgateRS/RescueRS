@@ -37,7 +37,7 @@ public class PaginationHandlerMiddleware(RequestDelegate next)
                         {
                             result = converter.ConvertFrom(cursor);
                             if (result == null)
-                                throw new Exception("result null");
+                                throw new Exception($"Não foi possível converter o cursor {cursor} para o tipo esperado {pagination.Type.Name}.");
                         }
                         catch (Exception ex)
                         {
