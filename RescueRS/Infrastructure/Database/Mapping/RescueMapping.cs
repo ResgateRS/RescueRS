@@ -11,7 +11,7 @@ public class RescueMapping : IEntityTypeConfiguration<RescueEntity>
 
         builder.Property(e => e.RescueId);
         builder.Property(e => e.RequestDateTime);
-        builder.Property(e => e.TotalPeopleNumber);
+        builder.Property(e => e.AdultsNumber);
         builder.Property(e => e.ChildrenNumber);
         builder.Property(e => e.ElderlyNumber);
         builder.Property(e => e.DisabledNumber);
