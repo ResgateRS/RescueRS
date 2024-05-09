@@ -19,7 +19,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             throw new Exception("RescueId is required");
 
         RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(dto.RescueId) ??
-            throw new Exception("Rescue not found");
+            throw new MessageException("Não foi possível encontrar esse resgate.");
 
         //TODO: rever essa regra
         if (_userSession.Rescuer == false && rescue.RequestedBy != _userSession.UserId)
@@ -42,7 +42,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(rescueId);
 
         if (rescue == null)
-            throw new Exception("Rescue not found");
+            throw new MessageException("Não foi possível encontrar esse resgate.");
 
         return Response.Success(RescueDTO.FromEntity(rescue));
     }
@@ -81,10 +81,10 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             throw new Exception("Rescuer cannot request rescue");
 
         if (dto.TotalPeopleNumber <= 0)
-            throw new Exception("TotalPeopleNumber is required");
+            throw new MessageException("Número de pessoas é obrigatório.");
 
         if (dto.AnimalsNumber < 0 || dto.ChildrenNumber < 0 || dto.DisabledNumber < 0 || dto.ElderlyNumber < 0)
-            throw new Exception("Negative number of people");
+            throw new MessageException("Número negativo de pessoas não é permitido.");
 
         RescueEntity entity = new()
         {

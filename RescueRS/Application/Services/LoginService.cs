@@ -7,6 +7,7 @@ using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 using ResgateRS.Tools;
 using ResgateRS.Auth;
 using ResgateRS.DTOs;
+using ResgateRS.Middleware;
 
 namespace ResgateRS.Domain.Application.Services;
 
@@ -15,7 +16,7 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
     public async Task<IResponse<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
         if (string.IsNullOrEmpty(dto.Cellphone))
-            throw new Exception("Telefone é necessário");
+            throw new MessageException("Telefone não informado.");
 
         UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 
