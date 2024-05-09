@@ -67,4 +67,23 @@ public static class StringExtensions
 
         return null;
     }
+    
+    public static bool IsValidPhoneNumber(this string phone)
+    {
+        return phone.IsValidCellphone() || phone.IsValidFixedTelephone();
+    }
+    public static bool IsValidCellphone(this string phone)
+    {
+        return Regex.IsMatch(phone.RemovingNonDigits(), "^([0-9]{2})([9]{1})([0-9]{8})$");
+    }
+
+    public static bool IsValidFixedTelephone(this string phone)
+    {
+        return Regex.IsMatch(phone.RemovingNonDigits(), "^([0-9]{2})([0-9]{8})$");
+    }
+
+    public static string RemovingNonDigits(this string text)
+    {
+        return new string((text ?? string.Empty).Where((char p) => char.IsDigit(p)).ToArray());
+    }
 }
