@@ -47,15 +47,18 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         return Response.Success(RescueDTO.FromEntity(rescue));
     }
 
-    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues()
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues(double? latitude, double? longitude)
     {
         IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetPendingRescues();
 
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x)));
+        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, latitude, longitude)));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescuesByProximity(double latitude, double longitude)
     {
+        if (latitude == 0 && longitude == 0)
+            return await ListPendingRescues(null, null);
+
         IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetPendingRescuesByProximity(latitude, longitude);
 
         return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, latitude, longitude)));
