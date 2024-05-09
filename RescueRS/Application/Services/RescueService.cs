@@ -8,6 +8,7 @@ using ResgateRS.Tools;
 using ResgateRS.Auth;
 using ResgateRS.DTOs;
 using ResgateRS.Middleware;
+using ResgateRS.Extensions;
 
 namespace ResgateRS.Domain.Application.Services;
 
@@ -80,6 +81,9 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
 
     public async Task<IResponse<ResponseDTO>> RequestRescue(RescueRequestDTO dto)
     {
+        if (dto.ContactPhone != null && !dto.ContactPhone.IsValidCellphone())
+            throw new MessageException("Número de telefone inválido.");
+            
         if (_userSession.Rescuer)
             throw new Exception("Rescuer cannot request rescue");
 
@@ -101,7 +105,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             Longitude = dto.Longitude,
             Rescued = false,
             RequestedBy = _userSession.UserId,
-            ContactPhone = _userSession.Cellphone
+            ContactPhone = dto.ContactPhone ?? _userSession.Cellphone
         };
 
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(entity);

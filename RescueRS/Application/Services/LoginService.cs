@@ -8,6 +8,7 @@ using ResgateRS.Tools;
 using ResgateRS.Auth;
 using ResgateRS.DTOs;
 using ResgateRS.Middleware;
+using ResgateRS.Extensions;
 
 namespace ResgateRS.Domain.Application.Services;
 
@@ -17,6 +18,9 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
     {
         if (string.IsNullOrEmpty(dto.Cellphone))
             throw new MessageException("Telefone não informado.");
+
+        if (!dto.Cellphone.IsValidCellphone())
+            throw new MessageException("Telefone inválido.");
 
         UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 
