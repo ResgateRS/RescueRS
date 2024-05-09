@@ -22,7 +22,7 @@ public class RescueDTO
         {
             RescueId = entity.RescueId,
             RequestDateTime = entity.RequestDateTime,
-            TotalPeopleNumber = entity.TotalPeopleNumber,
+            TotalPeopleNumber = entity.AdultsNumber,
             ChildrenNumber = entity.ChildrenNumber,
             ElderlyNumber = entity.ElderlyNumber,
             DisabledNumber = entity.DisabledNumber,

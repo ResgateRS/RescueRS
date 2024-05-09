@@ -4,7 +4,7 @@ public class RescueEntity
 {
     public Guid RescueId { get; set; }
     public DateTimeOffset RequestDateTime { get; set; }
-    public int TotalPeopleNumber { get; set; }
+    public int AdultsNumber { get; set; }
     public int ChildrenNumber { get; set; }
     public int ElderlyNumber { get; set; }
     public int DisabledNumber { get; set; }

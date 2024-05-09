@@ -3,7 +3,7 @@ using ResgateRS.Domain.Application.Entities;
 namespace ResgateRS.Presenter.Controllers.App.V1.DTOs;
 public class RescueRequestDTO
 {
-    public int TotalPeopleNumber { get; set; }
+    public int AdultsNumber { get; set; }
     public int ChildrenNumber { get; set; }
     public int ElderlyNumber { get; set; }
     public int DisabledNumber { get; set; }

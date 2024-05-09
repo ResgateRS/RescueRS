@@ -80,16 +80,16 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (_userSession.Rescuer)
             throw new Exception("Rescuer cannot request rescue");
 
-        if (dto.TotalPeopleNumber <= 0)
-            throw new MessageException("Número de pessoas é obrigatório.");
-
-        if (dto.AnimalsNumber < 0 || dto.ChildrenNumber < 0 || dto.DisabledNumber < 0 || dto.ElderlyNumber < 0)
+        if (dto.AdultsNumber  < 0 || dto.AnimalsNumber  < 0 || dto.ChildrenNumber  < 0 || dto.DisabledNumber  < 0 || dto.ElderlyNumber < 0)
             throw new MessageException("Número negativo de pessoas não é permitido.");
+
+        if (dto.AdultsNumber + dto.AnimalsNumber + dto.ChildrenNumber + dto.DisabledNumber + dto.ElderlyNumber <= 0)
+            throw new MessageException("Nenhuma pessoa informada.");
 
         RescueEntity entity = new()
         {
             RequestDateTime = DateTimeOffset.Now,
-            TotalPeopleNumber = dto.TotalPeopleNumber,
+            AdultsNumber = dto.AdultsNumber,
             ChildrenNumber = dto.ChildrenNumber,
             ElderlyNumber = dto.ElderlyNumber,
             DisabledNumber = dto.DisabledNumber,
