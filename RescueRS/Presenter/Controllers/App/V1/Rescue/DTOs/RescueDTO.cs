@@ -1,3 +1,4 @@
+using RescueRS.Application.Enums;
 using ResgateRS.Domain.Application.Entities;
 
 namespace ResgateRS.Presenter.Controllers.App.V1.DTOs;
@@ -12,10 +13,11 @@ public class RescueDTO
     public int AnimalsNumber { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
-    public bool Rescued { get; set; }
+    public RescueStatusEnum Status { get; set; }
     public DateTimeOffset? RescueDateTime { get; set; }
+    public DateTimeOffset? UpdateDateTime { get; set; }
     public string Cellphone { get; set; } = null!;
-    public double? distance { get; set; }
+    public double? Distance { get; set; }
 
     internal static RescueDTO FromEntity(RescueEntity entity, double? latitude = null, double? longitude = null) =>
         new()
@@ -29,10 +31,11 @@ public class RescueDTO
             AnimalsNumber = entity.AnimalsNumber,
             Latitude = entity.Latitude,
             Longitude = entity.Longitude,
-            Rescued = entity.Rescued,
+            Status = entity.Status,
             RescueDateTime = entity.RescueDateTime,
+            UpdateDateTime = entity.UpdateDateTime,
             Cellphone = entity.ContactPhone,
-            distance = latitude != null && longitude != null ? GetDistanceInMeters(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
+            Distance = latitude != null && longitude != null ? GetDistanceInMeters(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
         };
 
     private const double EarthRadiusKm = 6371.0;

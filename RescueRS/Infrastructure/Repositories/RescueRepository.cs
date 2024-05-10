@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RescueRS.Application.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Infrastructure.Database;
 using ResgateRS.Pagination;
@@ -30,7 +31,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
                         .FirstOrDefaultAsync();
 
         return await db.Rescues
-            .Where(x => !x.Rescued)
+            .Where(x => x.Status == RescueStatusEnum.Pending)
             .OrderByDescending(x => x.RequestDateTime)
             .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
             .ToListAsync();
@@ -44,7 +45,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
         double? lastDistance = lastRescue?.GetDistance(latitude, longitude);
 
         var rescues = await db.Rescues
-            .Where(x => !x.Rescued)
+            .Where(x => x.Status == RescueStatusEnum.Pending)
             .OrderByDescending(x => x.RequestDateTime)
             .ToListAsync();
 
@@ -63,7 +64,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
                         .FirstOrDefaultAsync();
 
         return await db.Rescues
-            .Where(x => x.Rescued)
+            .Where(x => x.Status == RescueStatusEnum.Completed)
             .OrderByDescending(x => x.RequestDateTime)
             .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
             .ToListAsync();
@@ -87,7 +88,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
             .Where(x => (!rescuer && x.RequestedBy == userId) ||
                         (rescuer && x.ConfirmedBy == userId))
             .OrderByDescending(x => x.RequestDateTime)
-                .ThenBy(x => x.Rescued)
+                .ThenBy(x => x.Status)
             .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
             .ToListAsync();
     }
