@@ -9,12 +9,22 @@ using ResgateRS.Auth;
 using ResgateRS.DTOs;
 using ResgateRS.Middleware;
 using ResgateRS.Extensions;
+using RescueRS.Application.Enums;
 
 namespace ResgateRS.Domain.Application.Services;
 
 public class RescueService(IServiceProvider serviceProvider, UserSession userSession) : BaseService(serviceProvider, userSession), IService
 {
-    public async Task<IResponse<object>> ConfirmRescue(RescueConfirmDTO dto)
+    public async Task<IResponse<object>> ConfirmRescue(RescueGuidDTO dto) =>
+        await SetRescueStatus(dto, RescueStatusEnum.Completed);
+
+    public async Task<IResponse<object>> StartRescue(RescueGuidDTO dto) =>
+        await SetRescueStatus(dto, RescueStatusEnum.InProgress);
+
+    public async Task<IResponse<object>> CancelRescue(RescueGuidDTO dto) =>
+        await SetRescueStatus(dto, RescueStatusEnum.Pending);
+
+    public async Task<IResponse<object>> SetRescueStatus(RescueGuidDTO dto, RescueStatusEnum status)
     {
         if (dto.RescueId == Guid.Empty)
             throw new Exception("RescueId is required");
@@ -22,13 +32,21 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(dto.RescueId) ??
             throw new MessageException("Não foi possível encontrar esse resgate.");
 
-        //TODO: rever essa regra
         if (_userSession.Rescuer == false && rescue.RequestedBy != _userSession.UserId)
             throw new MessageException("Você não tem permissão para confirmar este resgate");
 
-        rescue.RescueDateTime = DateTimeOffset.Now;
-        rescue.Rescued = true;
-        rescue.ConfirmedBy = _userSession.UserId;
+        rescue.Status = status;
+        rescue.UpdateDateTime = DateTimeOffset.Now;
+
+        switch (status)
+        {
+            case RescueStatusEnum.Completed:
+                rescue.RescueDateTime = DateTimeOffset.Now;
+                rescue.ConfirmedBy = _userSession.UserId;
+                break;
+            default:
+                break;
+        }
 
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(rescue);
 
@@ -83,11 +101,11 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
     {
         if (dto.ContactPhone != null && !dto.ContactPhone.IsValidCellphone())
             throw new MessageException("Número de telefone inválido.");
-            
+
         if (_userSession.Rescuer)
             throw new Exception("Rescuer cannot request rescue");
 
-        if (dto.AdultsNumber  < 0 || dto.AnimalsNumber  < 0 || dto.ChildrenNumber  < 0 || dto.DisabledNumber  < 0 || dto.ElderlyNumber < 0)
+        if (dto.AdultsNumber < 0 || dto.AnimalsNumber < 0 || dto.ChildrenNumber < 0 || dto.DisabledNumber < 0 || dto.ElderlyNumber < 0)
             throw new MessageException("Número negativo de pessoas não é permitido.");
 
         if (dto.AdultsNumber + dto.AnimalsNumber + dto.ChildrenNumber + dto.DisabledNumber + dto.ElderlyNumber <= 0)
@@ -96,6 +114,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         RescueEntity entity = new()
         {
             RequestDateTime = DateTimeOffset.Now,
+            UpdateDateTime = DateTimeOffset.Now,
             AdultsNumber = dto.AdultsNumber,
             ChildrenNumber = dto.ChildrenNumber,
             ElderlyNumber = dto.ElderlyNumber,
@@ -103,7 +122,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             AnimalsNumber = dto.AnimalsNumber,
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
-            Rescued = false,
+            Status = RescueStatusEnum.Pending,
             RequestedBy = _userSession.UserId,
             ContactPhone = dto.ContactPhone ?? _userSession.Cellphone
         };
