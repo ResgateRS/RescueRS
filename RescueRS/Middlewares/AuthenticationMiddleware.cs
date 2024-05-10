@@ -29,7 +29,7 @@ public class AuthenticationMiddleware(RequestDelegate next)
             if (!skipAuthentication)
             {   
                 if (!JwtManager.IsValidToken(hashLogin, out UserSession? userSession))
-                    throw new MessageException("Login expirado.", ResultType.Error);
+                    throw new MessageException("Login expirado.", ResultType.ErrorLogin);
 
                 _userSession.UserId = userSession!.UserId;
                 _userSession.Cellphone = userSession!.Cellphone;
