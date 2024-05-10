@@ -79,7 +79,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x)));
     }
 
-    public async Task<IResponse<ResponseDTO>> RequestRescue(RescueRequestDTO dto)
+    public async Task<IResponse<object>> RequestRescue(RescueRequestDTO dto)
     {
         if (dto.ContactPhone != null && !dto.ContactPhone.IsValidCellphone())
             throw new MessageException("Número de telefone inválido.");
@@ -110,6 +110,6 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
 
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(entity);
 
-        return Response.Success(new ResponseDTO { Message = "Solicitação de Resgate Registrada!" });
+        return Response.Success(default(Object), "Solicitação de Resgate Registrada!");
     }
 }
