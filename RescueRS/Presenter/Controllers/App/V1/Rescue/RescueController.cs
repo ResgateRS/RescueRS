@@ -40,6 +40,12 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListCompletedRescues() =>
         await this.mainService.ListCompletedRescues();
 
+    [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
+    [HttpGet("ListInProgressRescues")]
+    [MapToApiVersion("1.0")]
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListInProgressRescues() =>
+        await this.mainService.ListInProgressRescues();
+
     [HttpGet("Details")]
     [MapToApiVersion("1.0")]
     public async Task<IResponse<RescueDTO>> DetailRescue(Guid rescueId) =>

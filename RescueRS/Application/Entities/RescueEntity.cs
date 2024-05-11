@@ -17,6 +17,7 @@ public class RescueEntity
     public DateTimeOffset? RescueDateTime { get; set; }
     public DateTimeOffset? UpdateDateTime { get; set; }
     public Guid ConfirmedBy { get; set; }
+    public Guid UpdatedBy { get; set; }
     public Guid RequestedBy { get; set; }
     public string? Description { get; set; }
     public string ContactPhone { get; set; } = null!;

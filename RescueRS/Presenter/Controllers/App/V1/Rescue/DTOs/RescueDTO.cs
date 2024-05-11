@@ -19,8 +19,9 @@ public class RescueDTO
     public string Cellphone { get; set; } = null!;
     public string? Description { get; set; }
     public double? Distance { get; set; }
+    public bool StartedByMe { get; set; }
 
-    internal static RescueDTO FromEntity(RescueEntity entity, double? latitude = null, double? longitude = null) =>
+    internal static RescueDTO FromEntity(RescueEntity entity, Guid? currentUserId = null, double? latitude = null, double? longitude = null) =>
         new()
         {
             RescueId = entity.RescueId,
@@ -38,6 +39,7 @@ public class RescueDTO
             UpdateDateTime = entity.UpdateDateTime,
             Cellphone = entity.ContactPhone,
             Distance = latitude != null && longitude != null ? GetDistanceInMeters(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
+            StartedByMe = (entity.Status == RescueStatusEnum.InProgress && entity.UpdatedBy == currentUserId) || (entity.Status == RescueStatusEnum.Completed && entity.ConfirmedBy == currentUserId)
         };
 
     private const double EarthRadiusKm = 6371.0;
