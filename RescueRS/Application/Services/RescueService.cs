@@ -50,7 +50,15 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
 
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(rescue);
 
-        return Response.Success(default(Object), "Resgate concluído!");
+        var message = status switch
+        {
+            RescueStatusEnum.Completed => "Resgate concluído!",
+            RescueStatusEnum.InProgress => "Resgate iniciado!",
+            RescueStatusEnum.Pending => "Resgate revertido para \"pendente\"!",
+            _ => throw new Exception("Invalid status")
+        };
+
+        return Response.Success(default(Object), message);
     }
 
     public async Task<IResponse<RescueDTO>> DetailRescue(Guid rescueId)
