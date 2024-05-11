@@ -122,6 +122,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             AnimalsNumber = dto.AnimalsNumber,
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
+            Description = dto.Description,
             Status = RescueStatusEnum.Pending,
             RequestedBy = _userSession.UserId,
             ContactPhone = dto.ContactPhone ?? _userSession.Cellphone

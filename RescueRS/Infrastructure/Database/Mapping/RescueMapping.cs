@@ -20,5 +20,6 @@ public class RescueMapping : IEntityTypeConfiguration<RescueEntity>
         builder.Property(e => e.Longitude);
         builder.Property(e => e.Status);
         builder.Property(e => e.RescueDateTime);
+        builder.Property(e => e.Description);
     }
 }

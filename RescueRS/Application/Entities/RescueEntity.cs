@@ -18,6 +18,7 @@ public class RescueEntity
     public DateTimeOffset? UpdateDateTime { get; set; }
     public Guid ConfirmedBy { get; set; }
     public Guid RequestedBy { get; set; }
+    public string? Description { get; set; }
     public string ContactPhone { get; set; } = null!;
     internal double GetDistance(double latitude, double longitude) =>
         Math.Sqrt(Math.Pow(Latitude - latitude, 2) + Math.Pow(Longitude - longitude, 2));
