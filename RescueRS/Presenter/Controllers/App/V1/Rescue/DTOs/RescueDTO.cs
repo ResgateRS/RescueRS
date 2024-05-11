@@ -17,6 +17,7 @@ public class RescueDTO
     public DateTimeOffset? RescueDateTime { get; set; }
     public DateTimeOffset? UpdateDateTime { get; set; }
     public string Cellphone { get; set; } = null!;
+    public string? Description { get; set; }
     public double? Distance { get; set; }
 
     internal static RescueDTO FromEntity(RescueEntity entity, double? latitude = null, double? longitude = null) =>
@@ -33,6 +34,7 @@ public class RescueDTO
             Longitude = entity.Longitude,
             Status = entity.Status,
             RescueDateTime = entity.RescueDateTime,
+            Description = entity.Description,
             UpdateDateTime = entity.UpdateDateTime,
             Cellphone = entity.ContactPhone,
             Distance = latitude != null && longitude != null ? GetDistanceInMeters(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
