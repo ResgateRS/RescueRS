@@ -48,6 +48,8 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
                 break;
         }
 
+        await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(rescue);
+
         var message = status switch
         {
             RescueStatusEnum.Completed => "Resgate concluído!",
@@ -55,8 +57,6 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             RescueStatusEnum.Pending => "Resgate revertido para \"pendente\"!",
             _ => throw new Exception("Invalid status")
         };
-
-        await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(rescue);
 
         return Response.Success(default(Object), message);
     }
