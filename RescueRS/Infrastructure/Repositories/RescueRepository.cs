@@ -23,21 +23,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
         await db.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<RescueEntity>> GetPendingRescues()
-    {
-        DateTimeOffset? lastDate = await this.db.Rescues
-                        .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
-                        .Select(x => (DateTimeOffset?)x.RequestDateTime)
-                        .FirstOrDefaultAsync();
-
-        return await db.Rescues
-            .Where(x => x.Status == RescueStatusEnum.Pending)
-            .OrderByDescending(x => x.RequestDateTime)
-            .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<RescueEntity>> GetPendingRescuesByProximity(double latitude, double longitude)
+    public async Task<IEnumerable<RescueEntity>> GetRescuesByProximityWithStatus(RescueStatusEnum status, double latitude, double longitude)
     {
         RescueEntity? lastRescue = await this.db.Rescues
                         .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
@@ -45,8 +31,8 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
         double? lastDistance = lastRescue?.GetDistance(latitude, longitude);
 
         var rescues = await db.Rescues
-            .Where(x => x.Status == RescueStatusEnum.Pending)
-            .OrderByDescending(x => x.RequestDateTime)
+            .Where(x => x.Status == status)
+            .OrderByDescending(x => x.UpdateDateTime ?? x.RequestDateTime)
             .ToListAsync();
 
         return rescues
@@ -56,7 +42,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
             .ToList();
     }
 
-    public async Task<IEnumerable<RescueEntity>> GetCompletedRescues()
+    public async Task<IEnumerable<RescueEntity>> GetRescuesWithStatus(RescueStatusEnum status)
     {
         DateTimeOffset? lastDate = await this.db.Rescues
                         .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
@@ -64,7 +50,7 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
                         .FirstOrDefaultAsync();
 
         return await db.Rescues
-            .Where(x => x.Status == RescueStatusEnum.Completed)
+            .Where(x => x.Status == status)
             .OrderByDescending(x => x.RequestDateTime)
             .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
             .ToListAsync();
@@ -85,8 +71,8 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
                         .FirstOrDefaultAsync();
 
         return await this.db.Rescues
-            .Where(x => (!rescuer && x.RequestedBy == userId) ||
-                        (rescuer && x.ConfirmedBy == userId))
+            .Where(x => (!rescuer && (x.RequestedBy == userId)) ||
+                        (rescuer && (x.ConfirmedBy == userId || x.UpdatedBy == userId)))
             .OrderByDescending(x => x.RequestDateTime)
                 .ThenBy(x => x.Status)
             .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)

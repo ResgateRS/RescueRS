@@ -37,6 +37,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
 
         rescue.Status = status;
         rescue.UpdateDateTime = DateTimeOffset.Now;
+        rescue.UpdatedBy = _userSession.UserId;
 
         switch (status)
         {
@@ -71,14 +72,14 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (rescue == null)
             throw new MessageException("Não foi possível encontrar esse resgate.");
 
-        return Response.Success(RescueDTO.FromEntity(rescue));
+        return Response.Success(RescueDTO.FromEntity(rescue, _userSession.UserId));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues(double? latitude, double? longitude)
     {
-        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetPendingRescues();
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.Pending);
 
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, latitude, longitude)));
+        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId, latitude, longitude)));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescuesByProximity(double latitude, double longitude)
@@ -86,23 +87,30 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (latitude == 0 && longitude == 0)
             return await ListPendingRescues(null, null);
 
-        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetPendingRescuesByProximity(latitude, longitude);
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesByProximityWithStatus(RescueStatusEnum.Pending, latitude, longitude);
 
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, latitude, longitude)));
+        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId, latitude, longitude)));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListCompletedRescues()
     {
-        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetCompletedRescues();
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.Completed);
 
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x)));
+        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId)));
+    }
+
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListInProgressRescues()
+    {
+        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.InProgress);
+
+        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId)));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListMyRescues()
     {
         IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetMyRescues(_userSession.UserId, _userSession.Rescuer);
 
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x)));
+        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId)));
     }
 
     public async Task<IResponse<object>> RequestRescue(RescueRequestDTO dto)
