@@ -93,6 +93,9 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (dto.AdultsNumber + dto.AnimalsNumber + dto.ChildrenNumber + dto.DisabledNumber + dto.ElderlyNumber <= 0)
             throw new MessageException("Nenhuma pessoa informada.");
 
+        if (dto.Longitude == 0 && dto.Latitude == 0)
+            throw new MessageException("Não foi possível detectar a sua localização.");
+
         RescueEntity entity = new()
         {
             RequestDateTime = DateTimeOffset.Now,
