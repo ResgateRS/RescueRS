@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 using ResgateRS.Infrastructure.Database;
@@ -11,9 +12,11 @@ using ResgateRS.Infrastructure.Database;
 namespace ResgateRS.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ResgateRSDbContext))]
-    partial class ResgateRSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240511200819_UpdatedBy")]
+    partial class UpdatedBy
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,9 +45,6 @@ namespace ResgateRS.Infrastructure.Database.Migrations
 
                     b.Property<string>("ContactPhone")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
-
-                    b.Property<string>("Description")
                         .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<int>("DisabledNumber")

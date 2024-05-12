@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 using ResgateRS.Infrastructure.Database;
@@ -11,9 +12,11 @@ using ResgateRS.Infrastructure.Database;
 namespace ResgateRS.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ResgateRSDbContext))]
-    partial class ResgateRSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240511004446_RescueDescription")]
+    partial class RescueDescription
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -73,9 +76,6 @@ namespace ResgateRS.Infrastructure.Database.Migrations
 
                     b.Property<DateTimeOffset?>("UpdateDateTime")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
-
-                    b.Property<Guid>("UpdatedBy")
-                        .HasColumnType("RAW(16)");
 
                     b.HasKey("RescueId");
 

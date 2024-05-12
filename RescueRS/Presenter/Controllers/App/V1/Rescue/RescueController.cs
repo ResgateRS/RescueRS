@@ -16,11 +16,6 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     public async Task<IResponse<object>> RequestRescue(RescueRequestDTO dto) =>
         await this.mainService.RequestRescue(dto);
 
-    [HttpPost("Confirm")]
-    [MapToApiVersion("1.0")]
-    public async Task<IResponse<object>> ConfirmRescue(RescueConfirmDTO dto) =>
-        await this.mainService.ConfirmRescue(dto);
-
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListMyRescues")]
     [MapToApiVersion("1.0")]
@@ -45,9 +40,30 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListCompletedRescues() =>
         await this.mainService.ListCompletedRescues();
 
+    [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
+    [HttpGet("ListInProgressRescues")]
+    [MapToApiVersion("1.0")]
+    public async Task<IResponse<IEnumerable<RescueDTO>>> ListInProgressRescues() =>
+        await this.mainService.ListInProgressRescues();
+
     [HttpGet("Details")]
     [MapToApiVersion("1.0")]
     public async Task<IResponse<RescueDTO>> DetailRescue(Guid rescueId) =>
         await this.mainService.DetailRescue(rescueId);
+
+    [HttpPost("Confirm")]
+    [MapToApiVersion("1.0")]
+    public async Task<IResponse<object>> ConfirmRescue(RescueGuidDTO dto) =>
+        await this.mainService.ConfirmRescue(dto);
+
+    [HttpPost("Cancel")]
+    [MapToApiVersion("1.0")]
+    public async Task<IResponse<object>> CancelRescue(RescueGuidDTO dto) =>
+        await this.mainService.CancelRescue(dto);
+
+    [HttpPost("Start")]
+    [MapToApiVersion("1.0")]
+    public async Task<IResponse<object>> StartRescue(RescueGuidDTO dto) =>
+        await this.mainService.StartRescue(dto);
 }
 
