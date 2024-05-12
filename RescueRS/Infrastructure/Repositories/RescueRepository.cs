@@ -73,8 +73,8 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
         return await this.db.Rescues
             .Where(x => (!rescuer && (x.RequestedBy == userId)) ||
                         (rescuer && (x.ConfirmedBy == userId || x.UpdatedBy == userId)))
-            .OrderByDescending(x => x.Status)
-                .ThenBy(x => x.RequestDateTime)
+            .OrderBy(x => x.Status)
+                .ThenByDescending(x => x.RequestDateTime)
             .ApplyPagination(this.pagination, x => lastDate == null || x.RequestDateTime < lastDate)
             .ToListAsync();
     }
