@@ -37,12 +37,12 @@ void ConfigureBuilder(WebApplicationBuilder builder)
 {
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy(name: "allOrigins",
+        options.AddPolicy(name: "allowedOrigins",
                           policy =>
                           {
-                              policy.AllowAnyOrigin();
-                              policy.AllowAnyHeader();
-                              policy.AllowAnyMethod();
+                              policy.WithOrigins("https://resgaters.app.br", "https://www.resgaters.app.br")
+                                    .AllowAnyHeader()
+                                    .AllowAnyMethod();
                           });
     });
 }
@@ -95,7 +95,7 @@ void ConfigureServices(IServiceCollection services)
 
 void Configure(WebApplication app)
 {
-    app.UseCors("allOrigins");
+    app.UseCors("allowedOrigins");
 
     app.UseMiddleware<ExceptionHandlerMiddleware>();
 
