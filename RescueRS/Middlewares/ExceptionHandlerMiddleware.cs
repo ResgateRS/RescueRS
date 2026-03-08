@@ -19,10 +19,10 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             context.Response.ContentType = "application/json";
             switch (ex) {
                 case MessageException:
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(Response<string>.Fail(ex.Message, ((MessageException)ex).Result ?? ResultType.Error, null, $"{ex.GetCompleteMessage()} -- {ex.StackTrace}")));
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(Response<string>.Fail(ex.Message, ((MessageException)ex).Result ?? ResultType.Error)));
                     break;
                 default:
-                    await context.Response.WriteAsync((JsonSerializer.Serialize(Response<string>.Fail("Desculpe, ocorreu um problema com a sua solicitação, tente novamente mais tarde", ResultType.Error, null, $"{ex.GetCompleteMessage()} -- {ex.StackTrace}"))));
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(Response<string>.Fail("Desculpe, ocorreu um problema com a sua solicitação, tente novamente mais tarde", ResultType.Error)));
                     break;
             }
         }
