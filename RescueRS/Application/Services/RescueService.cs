@@ -35,6 +35,9 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (_userSession.Rescuer == false && rescue.RequestedBy != _userSession.UserId)
             throw new MessageException("Você não tem permissão para confirmar este resgate");
 
+        if (!IsValidTransition(rescue.Status, status))
+            throw new MessageException($"Transição de status inválida: {rescue.Status} → {status}");
+
         rescue.Status = status;
         rescue.UpdateDateTime = DateTimeOffset.Now;
         rescue.UpdatedBy = _userSession.UserId;
@@ -150,6 +153,17 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(entity);
 
         return Response.Success(default(Object), "Solicitação de Resgate Registrada!");
+    }
+
+    private static bool IsValidTransition(RescueStatusEnum from, RescueStatusEnum to)
+    {
+        return (from, to) switch
+        {
+            (RescueStatusEnum.Pending, RescueStatusEnum.InProgress) => true,
+            (RescueStatusEnum.InProgress, RescueStatusEnum.Completed) => true,
+            (RescueStatusEnum.InProgress, RescueStatusEnum.Pending) => true,
+            _ => false
+        };
     }
 
     private static string? SanitizeInput(string? input)
