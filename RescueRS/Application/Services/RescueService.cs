@@ -141,7 +141,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             AnimalsNumber = dto.AnimalsNumber,
             Latitude = dto.Latitude,
             Longitude = dto.Longitude,
-            Description = dto.Description,
+            Description = SanitizeInput(dto.Description),
             Status = RescueStatusEnum.Pending,
             RequestedBy = _userSession.UserId,
             ContactPhone = dto.ContactPhone ?? _userSession.Cellphone
@@ -150,5 +150,11 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(entity);
 
         return Response.Success(default(Object), "Solicitação de Resgate Registrada!");
+    }
+
+    private static string? SanitizeInput(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        return System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty).Trim();
     }
 }
