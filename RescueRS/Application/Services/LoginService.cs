@@ -12,7 +12,7 @@ using ResgateRS.Extensions;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class LoginService(IServiceProvider serviceProvider, UserSession userSession) : BaseService(serviceProvider, userSession), IService
+public class LoginService(IServiceProvider serviceProvider, UserSession userSession, IConfiguration config) : BaseService(serviceProvider, userSession), IService
 {
     public async Task<IResponse<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
@@ -24,14 +24,21 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
 
         UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 
+        bool isRescuer = dto.Rescuer && dto.RescuerAccessCode == config["AuthenticationSettings:RescuerAccessCode"];
+
         if (user == null)
         {
             user = new UserEntity
             {
                 Cellphone = dto.Cellphone,
-                Rescuer = dto.Rescuer,
+                Rescuer = isRescuer,
             };
 
+            user = await _serviceProvider.GetRequiredService<UserRepository>().InsertOrUpdate(user);
+        }
+        else if (dto.Rescuer && !user.Rescuer && isRescuer)
+        {
+            user.Rescuer = true;
             user = await _serviceProvider.GetRequiredService<UserRepository>().InsertOrUpdate(user);
         }
 
