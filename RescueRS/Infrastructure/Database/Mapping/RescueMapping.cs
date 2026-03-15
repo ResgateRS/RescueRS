@@ -21,5 +21,20 @@ public class RescueMapping : IEntityTypeConfiguration<RescueEntity>
         builder.Property(e => e.Status);
         builder.Property(e => e.RescueDateTime);
         builder.Property(e => e.Description);
+
+        builder.HasOne<UserEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.RequestedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<UserEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.ConfirmedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<UserEntity>()
+            .WithMany()
+            .HasForeignKey(e => e.UpdatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
