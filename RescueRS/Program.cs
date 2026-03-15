@@ -97,6 +97,8 @@ void Configure(WebApplication app)
 {
     app.UseCors("allowedOrigins");
 
+    app.UseMiddleware<RequestLoggingMiddleware>();
+
     app.UseMiddleware<ExceptionHandlerMiddleware>();
 
     app.UseMiddleware<AuthenticationMiddleware>();
