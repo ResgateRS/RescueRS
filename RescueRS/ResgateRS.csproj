@@ -23,14 +23,6 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="cwallet.sso" CopyToOutputDirectory="Always" />
-    <None Include="ewallet.p12" CopyToOutputDirectory="Always" />
-    <None Include="ewallet.pem" CopyToOutputDirectory="Always" />
-    <None Include="keystore.jks" CopyToOutputDirectory="Always" />
-    <None Include="ojdbc.properties" CopyToOutputDirectory="Always" />
-    <None Include="sqlnet.ora" CopyToOutputDirectory="Always" />
-    <None Include="tnsnames.ora" CopyToOutputDirectory="Always" />
-    <None Include="truststore.jks" CopyToOutputDirectory="Always" />
-  </ItemGroup>
+  <!-- Wallet files must be provided via environment/volume mount, not committed to repo -->
+  <!-- See README for Oracle wallet configuration -->
 </Project>
