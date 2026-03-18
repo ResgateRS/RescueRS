@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using ResgateRS.Extensions;
 using ResgateRS.Infrastructure.Database;
@@ -49,6 +51,19 @@ void ConfigureBuilder(WebApplicationBuilder builder)
 
 void ConfigureServices(IServiceCollection services)
 {
+    services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = 429;
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 60,
+                    Window = TimeSpan.FromMinutes(1)
+                }));
+    });
+
     services.AddApiVersioning(o =>
     {
         o.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
@@ -95,6 +110,8 @@ void ConfigureServices(IServiceCollection services)
 
 void Configure(WebApplication app)
 {
+    app.UseRateLimiter();
+
     app.UseCors("allowedOrigins");
 
     app.UseMiddleware<RequestLoggingMiddleware>();
