@@ -17,7 +17,9 @@ public class AuthenticationMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context, UserSession _userSession, IServiceProvider serviceProvider)
     {
 
-        string hashLogin = context.Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "") ?? "";
+        string hashLogin = context.Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "")
+            ?? context.Request.Cookies["auth_token"]
+            ?? "";
 
         EndpointMetadataCollection? metadata = context.Features.Get<IEndpointFeature>()?.Endpoint?.Metadata;
 
