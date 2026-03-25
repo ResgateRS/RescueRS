@@ -1,6 +1,7 @@
 ﻿using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.InMemory;
 using Microsoft.OpenApi.Models;
 using ResgateRS.Extensions;
 using ResgateRS.Infrastructure.Database;
@@ -89,7 +90,11 @@ void ConfigureServices(IServiceCollection services)
         c.OperationFilter<AddPaginationHeaderParameter>();
     });
 
-    services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseOracle(builder.Configuration.GetConnectionString("ResgateRSDbContext")));
+    var dbProvider = builder.Configuration["DatabaseProvider"] ?? "Oracle";
+    if (dbProvider == "InMemory")
+        services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("ResgateRS"));
+    else
+        services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseOracle(builder.Configuration.GetConnectionString("ResgateRSDbContext")));
 
     services.RegisterRepositoriesAndServices();
 
@@ -121,8 +126,6 @@ void Configure(WebApplication app)
     app.UseMiddleware<AuthenticationMiddleware>();
 
     app.UseMiddleware<PaginationHandlerMiddleware>();
-
-    app.UseMiddleware<CorsHeaderMiddleware>();
 
     app.UseSwagger();
     app.UseSwaggerUI();

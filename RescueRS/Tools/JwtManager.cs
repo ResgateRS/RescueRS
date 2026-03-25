@@ -61,7 +61,7 @@ public static class JwtManager
     public static bool IsValidToken<T>(string? token, out T? userData) where T : IJwtPayload
     {
         userData = default(T);
-        if (token.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(token))
             return false;
 
         var tokenHandler = new JwtSecurityTokenHandler();
