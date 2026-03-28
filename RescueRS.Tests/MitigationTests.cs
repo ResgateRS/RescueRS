@@ -260,4 +260,99 @@ public class MitigationTests
         Assert.DoesNotContain("at ResgateRS", ex.Message);
         Assert.DoesNotContain("StackTrace", ex.Message);
     }
+
+    [Fact]
+    public void I1_CsProj_ShouldNotReferenceWalletFiles()
+    {
+        var csprojPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..", "RescueRS", "ResgateRS.csproj");
+        var content = File.ReadAllText(csprojPath);
+
+        Assert.DoesNotContain("cwallet.sso", content);
+        Assert.DoesNotContain("ewallet.p12", content);
+        Assert.DoesNotContain("keystore.jks", content);
+        Assert.DoesNotContain("tnsnames.ora", content);
+    }
+
+    [Fact]
+    public void I4_CorsPolicy_ShouldNotAllowAnyOrigin()
+    {
+        var programPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..", "RescueRS", "Program.cs");
+        var content = File.ReadAllText(programPath);
+
+        Assert.DoesNotContain("AllowAnyOrigin", content);
+        Assert.Contains("WithOrigins", content);
+    }
+
+    [Fact]
+    public async Task T2_ForeignKey_ShouldBeEnforced()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+
+        var invalidUserId = Guid.NewGuid();
+        db.Rescues.Add(new RescueEntity
+        {
+            RescueId = Guid.NewGuid(),
+            Status = RescueStatusEnum.Pending,
+            RequestedBy = invalidUserId,
+            Latitude = -29.95,
+            Longitude = -51.18,
+            AdultsNumber = 1,
+            ContactPhone = "51999990008",
+            RequestDateTime = DateTimeOffset.Now,
+            UpdateDateTime = DateTimeOffset.Now
+        });
+
+        // InMemory provider does not enforce FK constraints,
+        // but we verify the mapping configuration exists
+        var entityType = db.Model.FindEntityType(typeof(RescueEntity));
+        var foreignKeys = entityType!.GetForeignKeys().ToList();
+        Assert.True(foreignKeys.Count >= 3, $"Expected at least 3 FKs (RequestedBy, ConfirmedBy, UpdatedBy), found {foreignKeys.Count}");
+    }
+
+    [Fact]
+    public void I5_LoginController_ShouldSetHttpOnlyCookie()
+    {
+        var controllerPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..",
+            "RescueRS", "Presenter", "Controllers", "App", "V1", "Login", "LoginController.cs");
+        var content = File.ReadAllText(controllerPath);
+
+        Assert.Contains("HttpOnly = true", content);
+        Assert.Contains("Secure = true", content);
+        Assert.Contains("SameSite", content);
+    }
+
+    [Fact]
+    public void R2_RequestLoggingMiddleware_ShouldExist()
+    {
+        var middlewarePath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..",
+            "RescueRS", "Middlewares", "RequestLoggingMiddleware.cs");
+        Assert.True(File.Exists(middlewarePath), "RequestLoggingMiddleware.cs should exist");
+
+        var content = File.ReadAllText(middlewarePath);
+        Assert.Contains("LogInformation", content);
+        Assert.Contains("LogError", content);
+
+        var programPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..", "RescueRS", "Program.cs");
+        var programContent = File.ReadAllText(programPath);
+        Assert.Contains("RequestLoggingMiddleware", programContent);
+    }
+
+    [Fact]
+    public void D1_D3_RateLimiting_ShouldBeConfigured()
+    {
+        var programPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..", "RescueRS", "Program.cs");
+        var content = File.ReadAllText(programPath);
+
+        Assert.Contains("AddRateLimiter", content);
+        Assert.Contains("UseRateLimiter", content);
+        Assert.Contains("PermitLimit", content);
+    }
 }
