@@ -92,9 +92,14 @@ void ConfigureServices(IServiceCollection services)
 
     var dbProvider = builder.Configuration["DatabaseProvider"] ?? "Oracle";
     if (dbProvider == "InMemory")
+    {
         services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("ResgateRS"));
+        services.AddSingleton<ResgateRS.Domain.Application.Services.Otp.IOtpProvider, ResgateRS.Domain.Application.Services.Otp.MockOtpProvider>();
+    }
     else
+    {
         services.AddDbContext<ResgateRSDbContext>(optionsBuilder => optionsBuilder.UseOracle(builder.Configuration.GetConnectionString("ResgateRSDbContext")));
+    }
 
     services.RegisterRepositoriesAndServices();
 

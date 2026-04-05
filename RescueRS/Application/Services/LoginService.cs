@@ -9,6 +9,7 @@ using ResgateRS.Auth;
 using ResgateRS.DTOs;
 using ResgateRS.Middleware;
 using ResgateRS.Extensions;
+using ResgateRS.Domain.Application.Services.Otp;
 
 namespace ResgateRS.Domain.Application.Services;
 
@@ -21,6 +22,19 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
 
         if (!dto.Cellphone.IsValidCellphone())
             throw new MessageException("Telefone inválido.");
+
+        var otpProvider = _serviceProvider.GetService<IOtpProvider>();
+        if (otpProvider != null)
+        {
+            if (string.IsNullOrEmpty(dto.OtpCode))
+            {
+                await otpProvider.SendCode(dto.Cellphone);
+                throw new MessageException("Código OTP enviado. Informe o código para continuar.");
+            }
+
+            if (!await otpProvider.VerifyCode(dto.Cellphone, dto.OtpCode))
+                throw new MessageException("Código OTP inválido.");
+        }
 
         UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 

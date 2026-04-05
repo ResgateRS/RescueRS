@@ -12,12 +12,13 @@ using ResgateRS.Middleware;
 using ResgateRS.Pagination;
 using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 using ResgateRS.Tools;
+using ResgateRS.Domain.Application.Services.Otp;
 
 namespace RescueRS.Tests;
 
 public class MitigationTests
 {
-    private ServiceProvider BuildServiceProvider()
+    private ServiceProvider BuildServiceProvider(bool withOtp = false)
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -37,6 +38,8 @@ public class MitigationTests
         services.AddScoped<RescueRepository>();
         services.AddScoped<LoginService>();
         services.AddScoped<RescueService>();
+        if (withOtp)
+            services.AddSingleton<IOtpProvider, MockOtpProvider>();
         services.AddTransient(provider =>
         {
             var jwt = new JwtTool();
@@ -342,6 +345,85 @@ public class MitigationTests
             Directory.GetCurrentDirectory(), "..", "..", "..", "..", "RescueRS", "Program.cs");
         var programContent = File.ReadAllText(programPath);
         Assert.Contains("RequestLoggingMiddleware", programContent);
+    }
+
+    [Fact]
+    public async Task S1_S3_LoginWithoutOtp_ShouldRequestCode()
+    {
+        using var sp = BuildServiceProvider(withOtp: true);
+        using var scope = sp.CreateScope();
+        var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
+
+        var ex = await Assert.ThrowsAsync<MessageException>(() =>
+            loginService.handle(new LoginRequestDTO
+            {
+                Cellphone = "51999990010",
+                Rescuer = false,
+                OtpCode = null
+            }));
+        Assert.Contains("OTP enviado", ex.Message);
+    }
+
+    [Fact]
+    public async Task S1_S3_LoginWithWrongOtp_ShouldFail()
+    {
+        using var sp = BuildServiceProvider(withOtp: true);
+        using var scope = sp.CreateScope();
+        var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
+
+        // First call sends code
+        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990011", Rescuer = false }); } catch { }
+
+        var ex = await Assert.ThrowsAsync<MessageException>(() =>
+            loginService.handle(new LoginRequestDTO
+            {
+                Cellphone = "51999990011",
+                Rescuer = false,
+                OtpCode = "000000"
+            }));
+        Assert.Contains("inválido", ex.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task S1_S3_LoginWithCorrectOtp_ShouldSucceed()
+    {
+        using var sp = BuildServiceProvider(withOtp: true);
+        using var scope = sp.CreateScope();
+        var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
+
+        // First call sends code
+        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990012", Rescuer = false }); } catch { }
+
+        var result = await loginService.handle(new LoginRequestDTO
+        {
+            Cellphone = "51999990012",
+            Rescuer = false,
+            OtpCode = "123456"
+        });
+        Assert.NotNull(result.Data?.Token);
+    }
+
+    [Fact]
+    public void I6_PhoneMasking_NonRescuerShouldSeeMaskedPhone()
+    {
+        var entity = new RescueEntity
+        {
+            RescueId = Guid.NewGuid(),
+            ContactPhone = "51999990013",
+            Status = RescueStatusEnum.Pending,
+            Latitude = -29.95,
+            Longitude = -51.18,
+            AdultsNumber = 1,
+            RequestDateTime = DateTimeOffset.Now,
+            UpdateDateTime = DateTimeOffset.Now
+        };
+
+        var dtoNonRescuer = RescueDTO.FromEntity(entity, isRescuer: false);
+        Assert.DoesNotContain("51999", dtoNonRescuer.Cellphone);
+        Assert.EndsWith("0013", dtoNonRescuer.Cellphone);
+
+        var dtoRescuer = RescueDTO.FromEntity(entity, isRescuer: true);
+        Assert.Equal("51999990013", dtoRescuer.Cellphone);
     }
 
     [Fact]
