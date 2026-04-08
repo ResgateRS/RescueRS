@@ -38,6 +38,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (!IsValidTransition(rescue.Status, status))
             throw new MessageException($"Transição de status inválida: {rescue.Status} → {status}");
 
+        var previousStatus = rescue.Status;
         rescue.Status = status;
         rescue.UpdateDateTime = DateTimeOffset.Now;
         rescue.UpdatedBy = _userSession.UserId;
@@ -53,6 +54,19 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         }
 
         await _serviceProvider.GetRequiredService<RescueRepository>().InsertOrUpdate(rescue);
+
+        var db = _serviceProvider.GetRequiredService<ResgateRS.Infrastructure.Database.ResgateRSDbContext>();
+        db.AuditLogs.Add(new AuditLogEntity
+        {
+            AuditLogId = Guid.NewGuid(),
+            UserId = _userSession.UserId,
+            Action = $"StatusChange",
+            EntityId = rescue.RescueId,
+            PreviousValue = previousStatus.ToString(),
+            NewValue = status.ToString(),
+            Timestamp = DateTimeOffset.Now
+        });
+        await db.SaveChangesAsync();
 
         var message = status switch
         {

@@ -38,6 +38,9 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
 
         UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 
+        if (user?.Banned == true)
+            throw new MessageException("Conta suspensa. Entre em contato com o administrador.");
+
         bool isRescuer = dto.Rescuer && dto.RescuerAccessCode == config["AuthenticationSettings:RescuerAccessCode"];
 
         if (user == null)
@@ -60,6 +63,7 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
         {
             UserId = user.UserId,
             Rescuer = user.Rescuer,
+            Admin = user.Admin,
             Cellphone = user.Cellphone
         };
 

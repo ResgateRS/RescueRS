@@ -16,6 +16,8 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 JwtManager.secret = config["AuthenticationSettings:TokenSecret"]!;
+ResgateRS.Infrastructure.Database.Encryption.PhoneEncryptionConverter.SetKey(
+    config["AuthenticationSettings:TokenSecret"]!);
 JwtManager.expirationMinutes = Convert.ToInt64(config["AuthenticationSettings:ExpiresInMinutes"]);
 
 try

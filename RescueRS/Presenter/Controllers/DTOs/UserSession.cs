@@ -6,5 +6,6 @@ public class UserSession : IJwtPayload
 {   
     public Guid UserId { get; set; }
     public bool Rescuer { get; set; }
+    public bool Admin { get; set; }
     public string Cellphone { get; set; } = string.Empty;
 }

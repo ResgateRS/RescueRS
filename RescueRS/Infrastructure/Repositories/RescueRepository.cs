@@ -25,20 +25,15 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
 
     public async Task<IEnumerable<RescueEntity>> GetRescuesByProximityWithStatus(RescueStatusEnum status, double latitude, double longitude)
     {
-        RescueEntity? lastRescue = await this.db.Rescues
-                        .Where(x => x.RescueId == (Guid?)this.pagination.cursor)
-                        .FirstOrDefaultAsync();
-        double? lastDistance = lastRescue?.GetDistance(latitude, longitude);
+        var pageSize = this.pagination.pageSize > 0 ? this.pagination.pageSize : 20;
 
         var rescues = await db.Rescues
             .Where(x => x.Status == status)
-            .OrderByDescending(x => x.UpdateDateTime ?? x.RequestDateTime)
             .ToListAsync();
 
         return rescues
             .OrderBy(x => x.GetDistance(latitude, longitude))
-            .AsQueryable()
-            .ApplyPagination(this.pagination, x => lastRescue == null || x.GetDistance(latitude, longitude) > lastDistance || (x.GetDistance(latitude, longitude) == lastDistance && x.RequestDateTime < lastRescue.RequestDateTime))
+            .Take(pageSize)
             .ToList();
     }
 

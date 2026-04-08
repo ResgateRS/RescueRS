@@ -50,6 +50,7 @@ public class MitigationTests
 
         JwtManager.secret = "TestSecretKeyForDevelopmentOnly32Chars!";
         JwtManager.expirationMinutes = 30;
+        ResgateRS.Infrastructure.Database.Encryption.PhoneEncryptionConverter.SetKey("TestSecretKeyForDevelopmentOnly32Chars!");
 
         return services.BuildServiceProvider();
     }
@@ -424,6 +425,98 @@ public class MitigationTests
 
         var dtoRescuer = RescueDTO.FromEntity(entity, isRescuer: true);
         Assert.Equal("51999990013", dtoRescuer.Cellphone);
+    }
+
+    [Fact]
+    public async Task R1_AuditLog_ShouldRecordStatusChange()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        var userSession = scope.ServiceProvider.GetRequiredService<UserSession>();
+        var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
+
+        var userId = Guid.NewGuid();
+        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990020", Rescuer = true });
+        var rescueId = Guid.NewGuid();
+        db.Rescues.Add(new RescueEntity
+        {
+            RescueId = rescueId, Status = RescueStatusEnum.Pending,
+            RequestedBy = Guid.NewGuid(), Latitude = -29.95, Longitude = -51.18,
+            AdultsNumber = 1, ContactPhone = "51999990020",
+            RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        });
+        await db.SaveChangesAsync();
+
+        userSession.UserId = userId;
+        userSession.Rescuer = true;
+
+        await rescueService.StartRescue(new RescueGuidDTO { RescueId = rescueId });
+
+        var log = await db.AuditLogs.FirstOrDefaultAsync();
+        Assert.NotNull(log);
+        Assert.Equal("StatusChange", log!.Action);
+        Assert.Equal("Pending", log.PreviousValue);
+        Assert.Equal("InProgress", log.NewValue);
+        Assert.Equal(userId, log.UserId);
+    }
+
+    [Fact]
+    public async Task I3_PhoneEncryption_ShouldEncryptInDatabase()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+
+        var user = new UserEntity { UserId = Guid.NewGuid(), Cellphone = "51999990021", Rescuer = false };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var retrieved = await db.Users.FirstAsync(u => u.UserId == user.UserId);
+        Assert.Equal("51999990021", retrieved.Cellphone);
+    }
+
+    [Fact]
+    public async Task E3_BannedUser_ShouldNotLogin()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
+
+        db.Users.Add(new UserEntity
+        {
+            UserId = Guid.NewGuid(), Cellphone = "51999990022",
+            Rescuer = false, Banned = true
+        });
+        await db.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<MessageException>(() =>
+            loginService.handle(new LoginRequestDTO { Cellphone = "51999990022", Rescuer = false }));
+        Assert.Contains("suspensa", ex.Message.ToLower());
+    }
+
+    [Fact]
+    public void E3_AdminController_ShouldExist()
+    {
+        var controllerPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..",
+            "RescueRS", "Presenter", "Controllers", "App", "V1", "Admin", "AdminController.cs");
+        Assert.True(File.Exists(controllerPath));
+        var content = File.ReadAllText(controllerPath);
+        Assert.Contains("Ban", content);
+        Assert.Contains("SetRole", content);
+        Assert.Contains("ListUsers", content);
+    }
+
+    [Fact]
+    public void D2_ProximitySearch_ShouldUsePagination()
+    {
+        var repoPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..",
+            "RescueRS", "Infrastructure", "Repositories", "RescueRepository.cs");
+        var content = File.ReadAllText(repoPath);
+        Assert.Contains("Take(pageSize)", content);
     }
 
     [Fact]

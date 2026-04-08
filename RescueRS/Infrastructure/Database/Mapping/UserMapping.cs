@@ -1,4 +1,5 @@
 using ResgateRS.Domain.Application.Entities;
+using ResgateRS.Infrastructure.Database.Encryption;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,8 +13,9 @@ public class UserMapping : IEntityTypeConfiguration<UserEntity>
         builder.Property(e => e.UserId);
         builder.Property(e => e.Rescuer)
             .HasConversion(
-                v => v ? 1 : 0, // Convert TRUE to 1, FALSE to 0
-                v => v == 1); // Convert 1 back to TRUE, anything else to FALSE
-        builder.Property(e => e.Cellphone);
+                v => v ? 1 : 0,
+                v => v == 1);
+        builder.Property(e => e.Cellphone)
+            .HasConversion(new PhoneEncryptionConverter());
     }
 }

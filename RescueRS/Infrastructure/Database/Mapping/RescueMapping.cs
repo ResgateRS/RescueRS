@@ -1,4 +1,5 @@
 using ResgateRS.Domain.Application.Entities;
+using ResgateRS.Infrastructure.Database.Encryption;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -20,6 +21,8 @@ public class RescueMapping : IEntityTypeConfiguration<RescueEntity>
         builder.Property(e => e.Longitude);
         builder.Property(e => e.Status);
         builder.Property(e => e.RescueDateTime);
+        builder.Property(e => e.ContactPhone)
+            .HasConversion(new PhoneEncryptionConverter());
         builder.Property(e => e.Description);
 
         builder.HasOne<UserEntity>()

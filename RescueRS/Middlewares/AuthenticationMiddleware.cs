@@ -36,6 +36,7 @@ public class AuthenticationMiddleware(RequestDelegate next)
                 _userSession.UserId = userSession!.UserId;
                 _userSession.Cellphone = userSession!.Cellphone;
                 _userSession.Rescuer = userSession!.Rescuer;
+                _userSession.Admin = userSession!.Admin;
             }
         }
 
