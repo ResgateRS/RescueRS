@@ -27,14 +27,23 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
     {
         var pageSize = this.pagination.pageSize > 0 ? this.pagination.pageSize : 20;
 
-        var rescues = await db.Rescues
-            .Where(x => x.Status == status)
-            .ToListAsync();
+        double latRad = latitude * Math.PI / 180.0;
+        double lonRad = longitude * Math.PI / 180.0;
 
-        return rescues
-            .OrderBy(x => x.GetDistance(latitude, longitude))
+        return await db.Rescues
+            .Where(x => x.Status == status)
+            .OrderBy(x =>
+                6371000.0 * 2.0 * Math.Atan2(
+                    Math.Sqrt(
+                        Math.Pow(Math.Sin((x.Latitude * Math.PI / 180.0 - latRad) / 2.0), 2) +
+                        Math.Cos(latRad) * Math.Cos(x.Latitude * Math.PI / 180.0) *
+                        Math.Pow(Math.Sin((x.Longitude * Math.PI / 180.0 - lonRad) / 2.0), 2)),
+                    Math.Sqrt(1.0 -
+                        (Math.Pow(Math.Sin((x.Latitude * Math.PI / 180.0 - latRad) / 2.0), 2) +
+                        Math.Cos(latRad) * Math.Cos(x.Latitude * Math.PI / 180.0) *
+                        Math.Pow(Math.Sin((x.Longitude * Math.PI / 180.0 - lonRad) / 2.0), 2)))))
             .Take(pageSize)
-            .ToList();
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<RescueEntity>> GetRescuesWithStatus(RescueStatusEnum status)
