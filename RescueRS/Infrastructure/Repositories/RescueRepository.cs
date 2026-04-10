@@ -27,21 +27,23 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
     {
         var pageSize = this.pagination.pageSize > 0 ? this.pagination.pageSize : 20;
 
-        double latRad = latitude * Math.PI / 180.0;
-        double lonRad = longitude * Math.PI / 180.0;
+        const double EarthRadiusMeters = 6_371_000.0;
+        const double DegreesToRadians = Math.PI / 180.0;
+
+        double latRad = latitude * DegreesToRadians;
+        double lonRad = longitude * DegreesToRadians;
 
         return await db.Rescues
             .Where(x => x.Status == status)
-            .OrderBy(x =>
-                6371000.0 * 2.0 * Math.Atan2(
-                    Math.Sqrt(
-                        Math.Pow(Math.Sin((x.Latitude * Math.PI / 180.0 - latRad) / 2.0), 2) +
-                        Math.Cos(latRad) * Math.Cos(x.Latitude * Math.PI / 180.0) *
-                        Math.Pow(Math.Sin((x.Longitude * Math.PI / 180.0 - lonRad) / 2.0), 2)),
-                    Math.Sqrt(1.0 -
-                        (Math.Pow(Math.Sin((x.Latitude * Math.PI / 180.0 - latRad) / 2.0), 2) +
-                        Math.Cos(latRad) * Math.Cos(x.Latitude * Math.PI / 180.0) *
-                        Math.Pow(Math.Sin((x.Longitude * Math.PI / 180.0 - lonRad) / 2.0), 2)))))
+            .OrderBy(x => EarthRadiusMeters * 2.0 * Math.Atan2(
+                Math.Sqrt(
+                    Math.Pow(Math.Sin((x.Latitude * DegreesToRadians - latRad) / 2.0), 2) +
+                    Math.Cos(latRad) * Math.Cos(x.Latitude * DegreesToRadians) *
+                    Math.Pow(Math.Sin((x.Longitude * DegreesToRadians - lonRad) / 2.0), 2)),
+                Math.Sqrt(1.0 -
+                    (Math.Pow(Math.Sin((x.Latitude * DegreesToRadians - latRad) / 2.0), 2) +
+                    Math.Cos(latRad) * Math.Cos(x.Latitude * DegreesToRadians) *
+                    Math.Pow(Math.Sin((x.Longitude * DegreesToRadians - lonRad) / 2.0), 2)))))
             .Take(pageSize)
             .ToListAsync();
     }
