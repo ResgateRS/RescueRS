@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using RescueRS.Application.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Infrastructure.Database;
@@ -27,25 +28,30 @@ public class RescueRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagi
     {
         var pageSize = this.pagination.pageSize > 0 ? this.pagination.pageSize : 20;
 
-        const double EarthRadiusMeters = 6_371_000.0;
-        const double DegreesToRadians = Math.PI / 180.0;
+        return await db.Rescues
+            .Where(x => x.Status == status)
+            .OrderBy(HaversineDistance(latitude, longitude))
+            .Take(pageSize)
+            .ToListAsync();
+    }
 
+    private const double EarthRadiusMeters = 6_371_000.0;
+    private const double DegreesToRadians = Math.PI / 180.0;
+
+    private static Expression<Func<RescueEntity, double>> HaversineDistance(double latitude, double longitude)
+    {
         double latRad = latitude * DegreesToRadians;
         double lonRad = longitude * DegreesToRadians;
 
-        return await db.Rescues
-            .Where(x => x.Status == status)
-            .OrderBy(x => EarthRadiusMeters * 2.0 * Math.Atan2(
-                Math.Sqrt(
-                    Math.Pow(Math.Sin((x.Latitude * DegreesToRadians - latRad) / 2.0), 2) +
-                    Math.Cos(latRad) * Math.Cos(x.Latitude * DegreesToRadians) *
-                    Math.Pow(Math.Sin((x.Longitude * DegreesToRadians - lonRad) / 2.0), 2)),
-                Math.Sqrt(1.0 -
-                    (Math.Pow(Math.Sin((x.Latitude * DegreesToRadians - latRad) / 2.0), 2) +
-                    Math.Cos(latRad) * Math.Cos(x.Latitude * DegreesToRadians) *
-                    Math.Pow(Math.Sin((x.Longitude * DegreesToRadians - lonRad) / 2.0), 2)))))
-            .Take(pageSize)
-            .ToListAsync();
+        return entity => EarthRadiusMeters * 2.0 * Math.Atan2(
+            Math.Sqrt(
+                Math.Pow(Math.Sin((entity.Latitude * DegreesToRadians - latRad) / 2.0), 2) +
+                Math.Cos(latRad) * Math.Cos(entity.Latitude * DegreesToRadians) *
+                Math.Pow(Math.Sin((entity.Longitude * DegreesToRadians - lonRad) / 2.0), 2)),
+            Math.Sqrt(1.0 -
+                (Math.Pow(Math.Sin((entity.Latitude * DegreesToRadians - latRad) / 2.0), 2) +
+                Math.Cos(latRad) * Math.Cos(entity.Latitude * DegreesToRadians) *
+                Math.Pow(Math.Sin((entity.Longitude * DegreesToRadians - lonRad) / 2.0), 2))));
     }
 
     public async Task<IEnumerable<RescueEntity>> GetRescuesWithStatus(RescueStatusEnum status)
