@@ -7,4 +7,5 @@ public class UserEntity
     public bool Admin { get; set; }
     public bool Banned { get; set; }
     public string Cellphone { get; set; } = null!;
+    public string CellphoneHash { get; set; } = null!;
 }

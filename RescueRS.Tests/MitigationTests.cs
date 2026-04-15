@@ -146,7 +146,7 @@ public class MitigationTests
         var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
 
         var userId = Guid.NewGuid();
-        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990004", Rescuer = true });
+        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990004", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990004"), Rescuer = true });
         var rescueId = Guid.NewGuid();
         db.Rescues.Add(new RescueEntity
         {
@@ -180,7 +180,7 @@ public class MitigationTests
         var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
 
         var userId = Guid.NewGuid();
-        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990005", Rescuer = true });
+        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990005", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990005"), Rescuer = true });
         var rescueId = Guid.NewGuid();
         db.Rescues.Add(new RescueEntity
         {
@@ -213,7 +213,7 @@ public class MitigationTests
         var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
 
         var userId = Guid.NewGuid();
-        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990006", Rescuer = true });
+        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990006", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990006"), Rescuer = true });
         var rescueId = Guid.NewGuid();
         db.Rescues.Add(new RescueEntity
         {
@@ -437,7 +437,7 @@ public class MitigationTests
         var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
 
         var userId = Guid.NewGuid();
-        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990020", Rescuer = true });
+        db.Users.Add(new UserEntity { UserId = userId, Cellphone = "51999990020", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990020"), Rescuer = true });
         var rescueId = Guid.NewGuid();
         db.Rescues.Add(new RescueEntity
         {
@@ -462,18 +462,28 @@ public class MitigationTests
     }
 
     [Fact]
-    public async Task I3_PhoneEncryption_ShouldEncryptInDatabase()
+    public async Task I3_PhoneEncryption_ShouldEncryptAndLookupByHash()
     {
         using var sp = BuildServiceProvider();
         using var scope = sp.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
 
-        var user = new UserEntity { UserId = Guid.NewGuid(), Cellphone = "51999990021", Rescuer = false };
+        var phone = "51999990021";
+        var hash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(phone);
+
+        var user = new UserEntity
+        {
+            UserId = Guid.NewGuid(),
+            Cellphone = phone,
+            CellphoneHash = hash,
+            Rescuer = false
+        };
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        var retrieved = await db.Users.FirstAsync(u => u.UserId == user.UserId);
-        Assert.Equal("51999990021", retrieved.Cellphone);
+        var retrieved = await db.Users.FirstAsync(u => u.CellphoneHash == hash);
+        Assert.Equal(phone, retrieved.Cellphone);
+        Assert.Equal(hash, retrieved.CellphoneHash);
     }
 
     [Fact]
@@ -486,7 +496,7 @@ public class MitigationTests
 
         db.Users.Add(new UserEntity
         {
-            UserId = Guid.NewGuid(), Cellphone = "51999990022",
+            UserId = Guid.NewGuid(), Cellphone = "51999990022", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990022"),
             Rescuer = false, Banned = true
         });
         await db.SaveChangesAsync();

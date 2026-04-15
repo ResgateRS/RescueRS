@@ -48,6 +48,7 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
             user = new UserEntity
             {
                 Cellphone = dto.Cellphone,
+                CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(dto.Cellphone),
                 Rescuer = isRescuer,
             };
 
