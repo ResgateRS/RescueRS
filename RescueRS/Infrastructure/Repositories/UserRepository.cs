@@ -13,7 +13,7 @@ public class UserRepository(ResgateRSDbContext _dbContext, PaginationDTO _pagina
     {
         var hash = PhoneHashHelper.ComputeHash(dto.Cellphone);
         return await this.db.Users
-            .FirstOrDefaultAsync(e => e.CellphoneHash == hash && e.Rescuer == dto.Rescuer);
+            .FirstOrDefaultAsync(e => e.CellphoneHash == hash);
     }
 
     public async Task<UserEntity> InsertOrUpdate(UserEntity user)

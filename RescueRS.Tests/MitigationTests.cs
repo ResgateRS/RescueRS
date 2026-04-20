@@ -25,7 +25,7 @@ public class MitigationTests
             {
                 ["AuthenticationSettings:TokenSecret"] = "TestSecretKeyForDevelopmentOnly32Chars!",
                 ["AuthenticationSettings:ExpiresInMinutes"] = "30",
-                ["AuthenticationSettings:RescuerAccessCode"] = "RESGATE2024"
+                ["AuthenticationSettings:RescuerAccessCode"] = "UNUSED"
             })
             .Build();
 
@@ -56,7 +56,7 @@ public class MitigationTests
     }
 
     [Fact]
-    public async Task S2_E1_LoginWithoutCode_ShouldNotGrantRescuerRole()
+    public async Task S2_E1_NewUser_ShouldNotBeRescuer()
     {
         using var sp = BuildServiceProvider();
         using var scope = sp.CreateScope();
@@ -64,28 +64,28 @@ public class MitigationTests
 
         var result = await loginService.handle(new LoginRequestDTO
         {
-            Cellphone = "51999990001",
-            Rescuer = true,
-            RescuerAccessCode = null
+            Cellphone = "51999990001"
         });
 
         Assert.False(result.Data!.Rescuer);
     }
 
     [Fact]
-    public async Task S2_E1_LoginWithCode_ShouldGrantRescuerRole()
+    public async Task S2_E1_AdminApproval_ShouldGrantRescuerRole()
     {
         using var sp = BuildServiceProvider();
         using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
-        var result = await loginService.handle(new LoginRequestDTO
-        {
-            Cellphone = "51999990002",
-            Rescuer = true,
-            RescuerAccessCode = "RESGATE2024"
-        });
+        await loginService.handle(new LoginRequestDTO { Cellphone = "51999990002" });
 
+        var user = await db.Users.FirstAsync(u => u.CellphoneHash ==
+            ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990002"));
+        user.Rescuer = true;
+        await db.SaveChangesAsync();
+
+        var result = await loginService.handle(new LoginRequestDTO { Cellphone = "51999990002" });
         Assert.True(result.Data!.Rescuer);
     }
 
@@ -101,8 +101,7 @@ public class MitigationTests
 
         var loginResult = await loginService.handle(new LoginRequestDTO
         {
-            Cellphone = "51999990003",
-            Rescuer = false
+            Cellphone = "51999990003"
         });
 
         userSession.UserId = Guid.Parse(new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
@@ -359,7 +358,6 @@ public class MitigationTests
             loginService.handle(new LoginRequestDTO
             {
                 Cellphone = "51999990010",
-                Rescuer = false,
                 OtpCode = null
             }));
         Assert.Contains("OTP enviado", ex.Message);
@@ -373,13 +371,12 @@ public class MitigationTests
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
         // First call sends code
-        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990011", Rescuer = false }); } catch { }
+        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990011" }); } catch { }
 
         var ex = await Assert.ThrowsAsync<MessageException>(() =>
             loginService.handle(new LoginRequestDTO
             {
                 Cellphone = "51999990011",
-                Rescuer = false,
                 OtpCode = "000000"
             }));
         Assert.Contains("inválido", ex.Message.ToLower());
@@ -393,12 +390,11 @@ public class MitigationTests
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
         // First call sends code
-        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990012", Rescuer = false }); } catch { }
+        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990012" }); } catch { }
 
         var result = await loginService.handle(new LoginRequestDTO
         {
             Cellphone = "51999990012",
-            Rescuer = false,
             OtpCode = "123456"
         });
         Assert.NotNull(result.Data?.Token);
@@ -502,7 +498,7 @@ public class MitigationTests
         await db.SaveChangesAsync();
 
         var ex = await Assert.ThrowsAsync<MessageException>(() =>
-            loginService.handle(new LoginRequestDTO { Cellphone = "51999990022", Rescuer = false }));
+            loginService.handle(new LoginRequestDTO { Cellphone = "51999990022" }));
         Assert.Contains("suspensa", ex.Message.ToLower());
     }
 

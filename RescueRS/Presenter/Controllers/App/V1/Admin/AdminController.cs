@@ -25,10 +25,49 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
             u.Cellphone,
             u.Rescuer,
             u.Admin,
-            u.Banned
+            u.Banned,
+            u.RescuerRequested,
+            u.RescuerRequestDescription
         }).ToListAsync();
 
         return Ok(Response<object>.Success(users));
+    }
+
+    [HttpGet("RescuerRequests")]
+    [MapToApiVersion("1.0")]
+    public async Task<IActionResult> ListRescuerRequests()
+    {
+        if (!userSession.Admin)
+            return Unauthorized(new { Message = "Acesso restrito a administradores." });
+
+        var requests = await db.Users
+            .Where(u => u.RescuerRequested && !u.Rescuer)
+            .Select(u => new
+            {
+                u.UserId,
+                u.Cellphone,
+                u.RescuerRequestDescription
+            }).ToListAsync();
+
+        return Ok(Response<object>.Success(requests));
+    }
+
+    [HttpPost("ApproveRescuer")]
+    [MapToApiVersion("1.0")]
+    public async Task<IActionResult> ApproveRescuer([FromBody] ApproveRescuerDTO dto)
+    {
+        if (!userSession.Admin)
+            return Unauthorized(new { Message = "Acesso restrito a administradores." });
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == dto.UserId);
+        if (user == null)
+            return NotFound(new { Message = "Usuário não encontrado." });
+
+        user.Rescuer = dto.Approved;
+        user.RescuerRequested = false;
+        await db.SaveChangesAsync();
+
+        return Ok(Response<object>.Success(null, dto.Approved ? "Resgatista aprovado." : "Solicitação rejeitada."));
     }
 
     [HttpPost("Ban")]
@@ -65,6 +104,12 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
 
         return Ok(Response<object>.Success(null, "Roles atualizadas."));
     }
+}
+
+public class ApproveRescuerDTO
+{
+    public Guid UserId { get; set; }
+    public bool Approved { get; set; }
 }
 
 public class BanRequestDTO

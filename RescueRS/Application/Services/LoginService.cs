@@ -13,7 +13,7 @@ using ResgateRS.Domain.Application.Services.Otp;
 
 namespace ResgateRS.Domain.Application.Services;
 
-public class LoginService(IServiceProvider serviceProvider, UserSession userSession, IConfiguration config) : BaseService(serviceProvider, userSession), IService
+public class LoginService(IServiceProvider serviceProvider, UserSession userSession) : BaseService(serviceProvider, userSession), IService
 {
     public async Task<IResponse<LoginResponseDTO>> handle(LoginRequestDTO dto)
     {
@@ -41,22 +41,15 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
         if (user?.Banned == true)
             throw new MessageException("Conta suspensa. Entre em contato com o administrador.");
 
-        bool isRescuer = dto.Rescuer && dto.RescuerAccessCode == config["AuthenticationSettings:RescuerAccessCode"];
-
         if (user == null)
         {
             user = new UserEntity
             {
                 Cellphone = dto.Cellphone,
                 CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(dto.Cellphone),
-                Rescuer = isRescuer,
+                Rescuer = false,
             };
 
-            user = await _serviceProvider.GetRequiredService<UserRepository>().InsertOrUpdate(user);
-        }
-        else if (dto.Rescuer && !user.Rescuer && isRescuer)
-        {
-            user.Rescuer = true;
             user = await _serviceProvider.GetRequiredService<UserRepository>().InsertOrUpdate(user);
         }
 

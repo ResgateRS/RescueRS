@@ -1,7 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ResgateRS.Attributes;
+using ResgateRS.Auth;
 using ResgateRS.Domain.Application.Services;
 using ResgateRS.DTOs;
+using ResgateRS.Infrastructure.Database;
+using ResgateRS.Middleware;
 using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 
 namespace ResgateRS.Presenter.Controllers.App.V1;
@@ -11,6 +15,27 @@ namespace ResgateRS.Presenter.Controllers.App.V1;
 [ApiVersion("1.0")]
 public class RescueController(RescueService service, IServiceProvider serviceProvider) : BaseController<RescueService, IServiceProvider>(service, serviceProvider)
 {
+    [HttpPost("RequestRescuerRole")]
+    [MapToApiVersion("1.0")]
+    public async Task<IActionResult> RequestRescuerRole([FromBody] RescuerRoleRequestDTO dto)
+    {
+        var session = serviceProvider.GetRequiredService<UserSession>();
+        var db = serviceProvider.GetRequiredService<ResgateRSDbContext>();
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == session.UserId);
+        if (user == null)
+            return NotFound(new { Message = "Usuário não encontrado." });
+
+        if (user.Rescuer)
+            return Ok(Response<object>.Success(null, "Você já é resgatista."));
+
+        user.RescuerRequested = true;
+        user.RescuerRequestDescription = dto.Description;
+        await db.SaveChangesAsync();
+
+        return Ok(Response<object>.Success(null, "Solicitação enviada. Aguarde aprovação."));
+    }
+
     [HttpPost("Request")]
     [MapToApiVersion("1.0")]
     public async Task<IResponse<object>> RequestRescue(RescueRequestDTO dto) =>
