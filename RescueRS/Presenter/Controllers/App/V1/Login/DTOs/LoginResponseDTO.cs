@@ -3,4 +3,5 @@ public class LoginResponseDTO
 {
     public string Token { get; set; } = null!;
     public bool Rescuer { get; set; }
+    public bool Admin { get; set; }
 }

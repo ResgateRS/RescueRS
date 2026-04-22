@@ -45,7 +45,8 @@ void ConfigureBuilder(WebApplicationBuilder builder)
         options.AddPolicy(name: "allowedOrigins",
                           policy =>
                           {
-                              policy.WithOrigins("https://resgaters.app.br", "https://www.resgaters.app.br")
+                              policy.WithOrigins("https://resgaters.app.br", "https://www.resgaters.app.br", "http://localhost:3000")
+                                    .AllowCredentials()
                                     .AllowAnyHeader()
                                     .AllowAnyMethod();
                           });

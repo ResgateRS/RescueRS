@@ -65,6 +65,6 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
         jwt.setUserData(userSession);
         string token = jwt.generateToken();
 
-        return Response.Success(new LoginResponseDTO { Token = token, Rescuer = user.Rescuer });
+        return Response.Success(new LoginResponseDTO { Token = token, Rescuer = user.Rescuer, Admin = user.Admin });
     }
 }
