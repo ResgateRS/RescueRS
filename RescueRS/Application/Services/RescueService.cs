@@ -135,8 +135,6 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         if (dto.ContactPhone != null && !dto.ContactPhone.IsValidCellphone())
             throw new MessageException("Número de telefone inválido.");
 
-        if (_userSession.Rescuer)
-            throw new Exception("Rescuer cannot request rescue");
 
         if (dto.AdultsNumber < 0 || dto.AnimalsNumber < 0 || dto.ChildrenNumber < 0 || dto.DisabledNumber < 0 || dto.ElderlyNumber < 0)
             throw new MessageException("Número negativo de pessoas não é permitido.");
