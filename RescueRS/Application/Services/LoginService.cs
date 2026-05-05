@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using ResgateRS.Presenter.Controllers.App.V1.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Domain.Application.Services.Interfaces;
 using ResgateRS.Infrastructure.Repositories;
@@ -13,9 +11,17 @@ using ResgateRS.Domain.Application.Services.Otp;
 
 namespace ResgateRS.Domain.Application.Services;
 
+public class LoginResult
+{
+    public bool OtpSent { get; set; }
+    public string? Token { get; set; }
+    public bool Rescuer { get; set; }
+    public bool Admin { get; set; }
+}
+
 public class LoginService(IServiceProvider serviceProvider, UserSession userSession) : BaseService(serviceProvider, userSession), IService
 {
-    public async Task<IResponse<LoginResponseDTO>> handle(LoginRequestDTO dto)
+    public async Task<LoginResult> Handle(LoginRequestDTO dto)
     {
         if (string.IsNullOrEmpty(dto.Cellphone))
             throw new MessageException("Telefone não informado.");
@@ -29,7 +35,7 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
             if (string.IsNullOrEmpty(dto.OtpCode))
             {
                 await otpProvider.SendCode(dto.Cellphone);
-                throw new MessageException("Código OTP enviado. Informe o código para continuar.");
+                return new LoginResult { OtpSent = true };
             }
 
             if (!await otpProvider.VerifyCode(dto.Cellphone, dto.OtpCode))
@@ -39,7 +45,7 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
         UserEntity? user = await _serviceProvider.GetRequiredService<UserRepository>().GetUser(dto);
 
         if (user?.Banned == true)
-            throw new MessageException("Conta suspensa. Entre em contato com o administrador.");
+            throw new MessageException("Conta suspensa. Entre em contato com o administrador.", 403);
 
         if (user == null)
         {
@@ -53,7 +59,7 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
             user = await _serviceProvider.GetRequiredService<UserRepository>().InsertOrUpdate(user);
         }
 
-        var userSession = new UserSession
+        var session = new UserSession
         {
             UserId = user.UserId,
             Rescuer = user.Rescuer,
@@ -62,9 +68,9 @@ public class LoginService(IServiceProvider serviceProvider, UserSession userSess
         };
 
         var jwt = _serviceProvider.GetRequiredService<JwtTool>();
-        jwt.setUserData(userSession);
+        jwt.setUserData(session);
         string token = jwt.generateToken();
 
-        return Response.Success(new LoginResponseDTO { Token = token, Rescuer = user.Rescuer, Admin = user.Admin });
+        return new LoginResult { Token = token, Rescuer = user.Rescuer, Admin = user.Admin };
     }
 }

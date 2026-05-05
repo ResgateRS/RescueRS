@@ -10,19 +10,18 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
 
     public async Task InvokeAsync(HttpContext context) {
         try {
-            // Executa antes da request
             await _next(context);
-            // Executa depois da request
         }
         catch (Exception ex) {
-            context.Response.StatusCode = 200;
             context.Response.ContentType = "application/json";
             switch (ex) {
-                case MessageException:
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(Response<string>.Fail(ex.Message, ((MessageException)ex).Result ?? ResultType.Error)));
+                case MessageException msgEx:
+                    context.Response.StatusCode = msgEx.HttpStatusCode;
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = msgEx.Message }));
                     break;
                 default:
-                    await context.Response.WriteAsync(JsonSerializer.Serialize(Response<string>.Fail("Desculpe, ocorreu um problema com a sua solicitação, tente novamente mais tarde", ResultType.Error)));
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = "Desculpe, ocorreu um problema com a sua solicitação, tente novamente mais tarde" }));
                     break;
             }
         }
@@ -32,16 +31,17 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
 
 public class MessageException : System.Exception
 {
+    public int HttpStatusCode { get; set; } = 400;
     public ResultType? Result { get; set; }
     public MessageException() { }
-    public MessageException(string message) : base(message) { }
+    public MessageException(string message, int httpStatusCode = 400) : base(message) {
+        HttpStatusCode = httpStatusCode;
+    }
     public MessageException(string message, ResultType resultType) : base(message) {
         Result = resultType;
+        HttpStatusCode = resultType == ResultType.ErrorLogin ? 401 : 400;
     }
     public MessageException(string message, System.Exception inner) : base(message, inner) { }
-    public MessageException(string message, ResultType resultType, System.Exception inner) : base(message, inner) {
-        Result = resultType;
-    }
     protected MessageException(
         System.Runtime.Serialization.SerializationInfo info,
         System.Runtime.Serialization.StreamingContext context) : base(info, context) { }

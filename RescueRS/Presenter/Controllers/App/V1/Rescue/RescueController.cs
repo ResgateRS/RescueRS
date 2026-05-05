@@ -15,6 +15,21 @@ namespace ResgateRS.Presenter.Controllers.App.V1;
 [ApiVersion("1.0")]
 public class RescueController(RescueService service, IServiceProvider serviceProvider) : BaseController<RescueService, IServiceProvider>(service, serviceProvider)
 {
+    [HttpGet("MyRescuerRequest")]
+    [MapToApiVersion("1.0")]
+    public async Task<IActionResult> MyRescuerRequest()
+    {
+        var session = serviceProvider.GetRequiredService<UserSession>();
+        var db = serviceProvider.GetRequiredService<ResgateRSDbContext>();
+        var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == session.UserId);
+
+        return Ok(new
+        {
+            requested = user?.RescuerRequested ?? false,
+            description = user?.RescuerRequestDescription
+        });
+    }
+
     [HttpPost("RequestRescuerRole")]
     [MapToApiVersion("1.0")]
     public async Task<IActionResult> RequestRescuerRole([FromBody] RescuerRoleRequestDTO dto)
@@ -24,16 +39,22 @@ public class RescueController(RescueService service, IServiceProvider servicePro
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == session.UserId);
         if (user == null)
-            return NotFound(new { Message = "Usuário não encontrado." });
+            return NotFound(new { message = "Usuário não encontrado." });
 
         if (user.Rescuer)
-            return Ok(Response<object>.Success(null, "Você já é resgatista."));
+            return Conflict(new { message = "Você já é resgatista." });
 
         user.RescuerRequested = true;
-        user.RescuerRequestDescription = dto.Description;
+        user.RescuerRequestDescription = SanitizeInput(dto.Description);
         await db.SaveChangesAsync();
 
-        return Ok(Response<object>.Success(null, "Solicitação enviada. Aguarde aprovação."));
+        return Ok(new { message = "Solicitação enviada. Aguarde aprovação." });
+    }
+
+    private static string? SanitizeInput(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        return System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty).Trim();
     }
 
     [HttpPost("Request")]
@@ -50,26 +71,42 @@ public class RescueController(RescueService service, IServiceProvider servicePro
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListPendingRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues(double? latitude, double? longitude) =>
-        await this.mainService.ListPendingRescues(latitude, longitude);
+    public async Task<IActionResult> ListPendingRescues(double? latitude, double? longitude)
+    {
+        if (!serviceProvider.GetRequiredService<UserSession>().Rescuer)
+            return StatusCode(403, new { message = "Acesso restrito a resgatistas." });
+        return Ok(await this.mainService.ListPendingRescues(latitude, longitude));
+    }
 
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListPendingRescuesByProximity")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescuesByProximity(double latitude, double longitude) =>
-        await this.mainService.ListPendingRescuesByProximity(latitude, longitude);
+    public async Task<IActionResult> ListPendingRescuesByProximity(double latitude, double longitude)
+    {
+        if (!serviceProvider.GetRequiredService<UserSession>().Rescuer)
+            return StatusCode(403, new { message = "Acesso restrito a resgatistas." });
+        return Ok(await this.mainService.ListPendingRescuesByProximity(latitude, longitude));
+    }
 
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListCompletedRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueDTO>>> ListCompletedRescues() =>
-        await this.mainService.ListCompletedRescues();
+    public async Task<IActionResult> ListCompletedRescues()
+    {
+        if (!serviceProvider.GetRequiredService<UserSession>().Rescuer)
+            return StatusCode(403, new { message = "Acesso restrito a resgatistas." });
+        return Ok(await this.mainService.ListCompletedRescues());
+    }
 
     [PaginatedRequest("Id do último resgate", PaginationType.Cursor, typeof(Guid))]
     [HttpGet("ListInProgressRescues")]
     [MapToApiVersion("1.0")]
-    public async Task<IResponse<IEnumerable<RescueDTO>>> ListInProgressRescues() =>
-        await this.mainService.ListInProgressRescues();
+    public async Task<IActionResult> ListInProgressRescues()
+    {
+        if (!serviceProvider.GetRequiredService<UserSession>().Rescuer)
+            return StatusCode(403, new { message = "Acesso restrito a resgatistas." });
+        return Ok(await this.mainService.ListInProgressRescues());
+    }
 
     [HttpGet("Details")]
     [MapToApiVersion("1.0")]

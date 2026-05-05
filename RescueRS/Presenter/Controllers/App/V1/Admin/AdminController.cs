@@ -17,7 +17,7 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
     public async Task<IActionResult> ListUsers()
     {
         if (!userSession.Admin)
-            return Unauthorized(new { Message = "Acesso restrito a administradores." });
+            return StatusCode(403, new { message = "Acesso restrito a administradores." });
 
         var users = await db.Users.Select(u => new
         {
@@ -30,7 +30,7 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
             u.RescuerRequestDescription
         }).ToListAsync();
 
-        return Ok(Response<object>.Success(users));
+        return Ok(users);
     }
 
     [HttpGet("RescuerRequests")]
@@ -38,7 +38,7 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
     public async Task<IActionResult> ListRescuerRequests()
     {
         if (!userSession.Admin)
-            return Unauthorized(new { Message = "Acesso restrito a administradores." });
+            return StatusCode(403, new { message = "Acesso restrito a administradores." });
 
         var requests = await db.Users
             .Where(u => u.RescuerRequested && !u.Rescuer)
@@ -49,7 +49,7 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
                 u.RescuerRequestDescription
             }).ToListAsync();
 
-        return Ok(Response<object>.Success(requests));
+        return Ok(requests);
     }
 
     [HttpPost("ApproveRescuer")]
@@ -57,17 +57,17 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
     public async Task<IActionResult> ApproveRescuer([FromBody] ApproveRescuerDTO dto)
     {
         if (!userSession.Admin)
-            return Unauthorized(new { Message = "Acesso restrito a administradores." });
+            return StatusCode(403, new { message = "Acesso restrito a administradores." });
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == dto.UserId);
         if (user == null)
-            return NotFound(new { Message = "Usuário não encontrado." });
+            return NotFound(new { message = "Usuário não encontrado." });
 
         user.Rescuer = dto.Approved;
         user.RescuerRequested = false;
         await db.SaveChangesAsync();
 
-        return Ok(Response<object>.Success(null, dto.Approved ? "Resgatista aprovado." : "Solicitação rejeitada."));
+        return Ok(new { message = dto.Approved ? "Resgatista aprovado." : "Solicitação rejeitada." });
     }
 
     [HttpPost("Ban")]
@@ -75,16 +75,16 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
     public async Task<IActionResult> BanUser([FromBody] BanRequestDTO dto)
     {
         if (!userSession.Admin)
-            return Unauthorized(new { Message = "Acesso restrito a administradores." });
+            return StatusCode(403, new { message = "Acesso restrito a administradores." });
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == dto.UserId);
         if (user == null)
-            return NotFound(new { Message = "Usuário não encontrado." });
+            return NotFound(new { message = "Usuário não encontrado." });
 
         user.Banned = dto.Banned;
         await db.SaveChangesAsync();
 
-        return Ok(Response<object>.Success(null, dto.Banned ? "Usuário banido." : "Ban removido."));
+        return Ok(new { message = dto.Banned ? "Usuário banido." : "Ban removido." });
     }
 
     [HttpPost("SetRole")]
@@ -92,17 +92,17 @@ public class AdminController(ResgateRSDbContext db, UserSession userSession) : C
     public async Task<IActionResult> SetRole([FromBody] SetRoleDTO dto)
     {
         if (!userSession.Admin)
-            return Unauthorized(new { Message = "Acesso restrito a administradores." });
+            return StatusCode(403, new { message = "Acesso restrito a administradores." });
 
         var user = await db.Users.FirstOrDefaultAsync(u => u.UserId == dto.UserId);
         if (user == null)
-            return NotFound(new { Message = "Usuário não encontrado." });
+            return NotFound(new { message = "Usuário não encontrado." });
 
         user.Rescuer = dto.Rescuer;
         user.Admin = dto.Admin;
         await db.SaveChangesAsync();
 
-        return Ok(Response<object>.Success(null, "Roles atualizadas."));
+        return Ok(new { message = "Roles atualizadas." });
     }
 }
 
