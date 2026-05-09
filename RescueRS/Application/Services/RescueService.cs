@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ResgateRS.Presenter.Controllers.App.V1.Enums;
 using ResgateRS.Domain.Application.Entities;
 using ResgateRS.Domain.Application.Services.Interfaces;
 using ResgateRS.Infrastructure.Repositories;
+using ResgateRS.Infrastructure.Database;
 using ResgateRS.Presenter.Controllers.App.V1.DTOs;
 using ResgateRS.Tools;
 using ResgateRS.Auth;
@@ -32,8 +34,15 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
         RescueEntity? rescue = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescueById(dto.RescueId) ??
             throw new MessageException("Não foi possível encontrar esse resgate.");
 
-        if (_userSession.Rescuer == false && rescue.RequestedBy != _userSession.UserId)
-            throw new MessageException("Você não tem permissão para confirmar este resgate");
+        bool isRequester = rescue.RequestedBy == _userSession.UserId;
+        bool isRescuerWhoStarted = _userSession.Rescuer && rescue.UpdatedBy == _userSession.UserId;
+        bool isAdmin = _userSession.Admin;
+
+        if (!isRequester && !_userSession.Rescuer)
+            throw new MessageException("Você não tem permissão para alterar este resgate.");
+
+        if (rescue.Status == RescueStatusEnum.InProgress && !isRequester && !isRescuerWhoStarted && !isAdmin)
+            throw new MessageException("Apenas o resgatista que iniciou ou o solicitante podem alterar este resgate.");
 
         if (!IsValidTransition(rescue.Status, status))
             throw new MessageException($"Transição de status inválida: {rescue.Status} → {status}");
@@ -95,8 +104,7 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescues(double? latitude, double? longitude)
     {
         IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.Pending);
-
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId, latitude, longitude, _userSession.Rescuer)));
+        return Response.Success(ToDTO(rescues, new(), latitude, longitude));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListPendingRescuesByProximity(double latitude, double longitude)
@@ -105,29 +113,28 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             return await ListPendingRescues(null, null);
 
         IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesByProximityWithStatus(RescueStatusEnum.Pending, latitude, longitude);
-
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId, latitude, longitude, _userSession.Rescuer)));
+        return Response.Success(ToDTO(rescues, new(), latitude, longitude));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListCompletedRescues()
     {
-        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.Completed);
-
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId, isRescuer: _userSession.Rescuer)));
+        var rescues = (await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.Completed)).ToList();
+        var phones = await GetRescuerPhones(rescues);
+        return Response.Success(ToDTO(rescues, phones));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListInProgressRescues()
     {
-        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.InProgress);
-
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId, isRescuer: _userSession.Rescuer)));
+        var rescues = (await _serviceProvider.GetRequiredService<RescueRepository>().GetRescuesWithStatus(RescueStatusEnum.InProgress)).ToList();
+        var phones = await GetRescuerPhones(rescues);
+        return Response.Success(ToDTO(rescues, phones));
     }
 
     public async Task<IResponse<IEnumerable<RescueDTO>>> ListMyRescues()
     {
-        IEnumerable<RescueEntity> rescues = await _serviceProvider.GetRequiredService<RescueRepository>().GetMyRescues(_userSession.UserId, _userSession.Rescuer);
-
-        return Response.Success(rescues.Select(x => RescueDTO.FromEntity(x, _userSession.UserId, isRescuer: _userSession.Rescuer)));
+        var rescues = (await _serviceProvider.GetRequiredService<RescueRepository>().GetMyRescues(_userSession.UserId, _userSession.Rescuer)).ToList();
+        var phones = await GetRescuerPhones(rescues);
+        return Response.Success(ToDTO(rescues, phones));
     }
 
     public async Task<IResponse<object>> RequestRescue(RescueRequestDTO dto)
@@ -176,6 +183,30 @@ public class RescueService(IServiceProvider serviceProvider, UserSession userSes
             (RescueStatusEnum.InProgress, RescueStatusEnum.Pending) => true,
             _ => false
         };
+    }
+
+    private async Task<Dictionary<Guid, string>> GetRescuerPhones(IEnumerable<RescueEntity> rescues)
+    {
+        var rescuerIds = rescues
+            .Where(r => r.Status != RescueStatusEnum.Pending && r.UpdatedBy != Guid.Empty)
+            .Select(r => r.UpdatedBy)
+            .Distinct()
+            .ToList();
+
+        if (rescuerIds.Count == 0) return new();
+
+        var db = _serviceProvider.GetRequiredService<ResgateRSDbContext>();
+        return await db.Users
+            .Where(u => rescuerIds.Contains(u.UserId))
+            .ToDictionaryAsync(u => u.UserId, u => u.Cellphone);
+    }
+
+    private IEnumerable<RescueDTO> ToDTO(IEnumerable<RescueEntity> rescues, Dictionary<Guid, string> rescuerPhones, double? latitude = null, double? longitude = null)
+    {
+        return rescues.Select(x => RescueDTO.FromEntity(
+            x, _userSession.UserId, latitude, longitude, _userSession.Rescuer,
+            x.UpdatedBy != Guid.Empty && rescuerPhones.TryGetValue(x.UpdatedBy, out var phone) ? phone : null,
+            _userSession.Admin));
     }
 
     private static string? SanitizeInput(string? input)

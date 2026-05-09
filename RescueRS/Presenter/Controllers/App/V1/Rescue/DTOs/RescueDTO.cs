@@ -20,8 +20,10 @@ public class RescueDTO
     public string? Description { get; set; }
     public double? Distance { get; set; }
     public bool StartedByMe { get; set; }
+    public bool RequestedByMe { get; set; }
+    public string? RescuerPhone { get; set; }
 
-    internal static RescueDTO FromEntity(RescueEntity entity, Guid? currentUserId = null, double? latitude = null, double? longitude = null, bool isRescuer = false) =>
+    internal static RescueDTO FromEntity(RescueEntity entity, Guid? currentUserId = null, double? latitude = null, double? longitude = null, bool isRescuer = false, string? rescuerPhone = null, bool isAdmin = false) =>
         new()
         {
             RescueId = entity.RescueId,
@@ -39,7 +41,14 @@ public class RescueDTO
             UpdateDateTime = entity.UpdateDateTime,
             Cellphone = isRescuer ? entity.ContactPhone : MaskPhone(entity.ContactPhone),
             Distance = latitude != null && longitude != null ? GetDistanceInMeters(latitude.Value, longitude.Value, entity.Latitude, entity.Longitude) : null,
-            StartedByMe = (entity.Status == RescueStatusEnum.InProgress && entity.UpdatedBy == currentUserId) || (entity.Status == RescueStatusEnum.Completed && entity.ConfirmedBy == currentUserId)
+            StartedByMe = (entity.Status == RescueStatusEnum.InProgress && entity.UpdatedBy == currentUserId) || (entity.Status == RescueStatusEnum.Completed && entity.ConfirmedBy == currentUserId),
+            RequestedByMe = entity.RequestedBy == currentUserId,
+            RescuerPhone = entity.Status != RescueStatusEnum.Pending
+                    && entity.UpdatedBy != currentUserId
+                    && rescuerPhone != null
+                    && (isRescuer || isAdmin || entity.RequestedBy == currentUserId)
+                ? rescuerPhone
+                : null
         };
 
     private static string MaskPhone(string phone)
