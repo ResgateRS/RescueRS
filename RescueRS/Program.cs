@@ -45,7 +45,7 @@ void ConfigureBuilder(WebApplicationBuilder builder)
         options.AddPolicy(name: "allowedOrigins",
                           policy =>
                           {
-                              policy.WithOrigins("https://resgaters.app.br", "https://www.resgaters.app.br", "http://localhost:3000")
+                              policy.WithOrigins("https://resgaters.app.br", "https://www.resgaters.app.br", "http://localhost:3000", "http://192.168.15.15:3000")
                                     .AllowCredentials()
                                     .AllowAnyHeader()
                                     .AllowAnyMethod();
@@ -63,7 +63,7 @@ void ConfigureServices(IServiceCollection services)
                 partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 60,
+                    PermitLimit = builder.Environment.EnvironmentName == "Test" ? 500 : 120,
                     Window = TimeSpan.FromMinutes(1)
                 }));
     });
@@ -123,6 +123,26 @@ void ConfigureServices(IServiceCollection services)
 
 void Configure(WebApplication app)
 {
+    if (app.Environment.EnvironmentName == "Test")
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        db.Database.EnsureCreated();
+        if (!db.Users.Any(u => u.Admin))
+        {
+            var adminPhone = "51999000000";
+            db.Users.Add(new ResgateRS.Domain.Application.Entities.UserEntity
+            {
+                UserId = Guid.NewGuid(),
+                Cellphone = adminPhone,
+                CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(adminPhone),
+                Rescuer = true,
+                Admin = true,
+            });
+            db.SaveChanges();
+        }
+    }
+
     app.UseRateLimiter();
 
     app.UseCors("allowedOrigins");
