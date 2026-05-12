@@ -62,12 +62,12 @@ public class MitigationTests
         using var scope = sp.CreateScope();
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
-        var result = await loginService.handle(new LoginRequestDTO
+        var result = await loginService.Handle(new LoginRequestDTO
         {
             Cellphone = "51999990001"
         });
 
-        Assert.False(result.Data!.Rescuer);
+        Assert.False(result.Rescuer);
     }
 
     [Fact]
@@ -78,15 +78,15 @@ public class MitigationTests
         var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
-        await loginService.handle(new LoginRequestDTO { Cellphone = "51999990002" });
+        await loginService.Handle(new LoginRequestDTO { Cellphone = "51999990002" });
 
         var user = await db.Users.FirstAsync(u => u.CellphoneHash ==
             ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990002"));
         user.Rescuer = true;
         await db.SaveChangesAsync();
 
-        var result = await loginService.handle(new LoginRequestDTO { Cellphone = "51999990002" });
-        Assert.True(result.Data!.Rescuer);
+        var result = await loginService.Handle(new LoginRequestDTO { Cellphone = "51999990002" });
+        Assert.True(result.Rescuer);
     }
 
     [Fact]
@@ -99,18 +99,18 @@ public class MitigationTests
         var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
         var userSession = scope.ServiceProvider.GetRequiredService<UserSession>();
 
-        var loginResult = await loginService.handle(new LoginRequestDTO
+        var loginResult = await loginService.Handle(new LoginRequestDTO
         {
             Cellphone = "51999990003"
         });
 
         userSession.UserId = Guid.Parse(new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
-            .ReadJwtToken(loginResult.Data!.Token)
+            .ReadJwtToken(loginResult.Token!)
             .Payload["userData"].ToString()!
             .Contains("UserId")
             ? System.Text.Json.JsonSerializer.Deserialize<UserSession>(
                 new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
-                .ReadJwtToken(loginResult.Data.Token)
+                .ReadJwtToken(loginResult.Token!)
                 .Payload["userData"].ToString()!)!.UserId.ToString()
             : Guid.Empty.ToString());
         userSession.Rescuer = false;
@@ -219,6 +219,7 @@ public class MitigationTests
             RescueId = rescueId,
             Status = RescueStatusEnum.InProgress,
             RequestedBy = Guid.NewGuid(),
+            UpdatedBy = userId,
             Latitude = -29.95,
             Longitude = -51.18,
             AdultsNumber = 1,
@@ -325,7 +326,7 @@ public class MitigationTests
         var content = File.ReadAllText(controllerPath);
 
         Assert.Contains("HttpOnly = true", content);
-        Assert.Contains("Secure = true", content);
+        Assert.Contains("Secure = isProduction", content);
         Assert.Contains("SameSite", content);
     }
 
@@ -354,13 +355,13 @@ public class MitigationTests
         using var scope = sp.CreateScope();
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
-        var ex = await Assert.ThrowsAsync<MessageException>(() =>
-            loginService.handle(new LoginRequestDTO
-            {
-                Cellphone = "51999990010",
-                OtpCode = null
-            }));
-        Assert.Contains("OTP enviado", ex.Message);
+        var result = await loginService.Handle(new LoginRequestDTO
+        {
+            Cellphone = "51999990010",
+            OtpCode = null
+        });
+        Assert.True(result.OtpSent);
+        Assert.Null(result.Token);
     }
 
     [Fact]
@@ -370,11 +371,10 @@ public class MitigationTests
         using var scope = sp.CreateScope();
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
-        // First call sends code
-        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990011" }); } catch { }
+        await loginService.Handle(new LoginRequestDTO { Cellphone = "51999990011" });
 
         var ex = await Assert.ThrowsAsync<MessageException>(() =>
-            loginService.handle(new LoginRequestDTO
+            loginService.Handle(new LoginRequestDTO
             {
                 Cellphone = "51999990011",
                 OtpCode = "000000"
@@ -389,15 +389,14 @@ public class MitigationTests
         using var scope = sp.CreateScope();
         var loginService = scope.ServiceProvider.GetRequiredService<LoginService>();
 
-        // First call sends code
-        try { await loginService.handle(new LoginRequestDTO { Cellphone = "51999990012" }); } catch { }
+        await loginService.Handle(new LoginRequestDTO { Cellphone = "51999990012" });
 
-        var result = await loginService.handle(new LoginRequestDTO
+        var result = await loginService.Handle(new LoginRequestDTO
         {
             Cellphone = "51999990012",
             OtpCode = "123456"
         });
-        Assert.NotNull(result.Data?.Token);
+        Assert.NotNull(result.Token);
     }
 
     [Fact]
@@ -498,7 +497,7 @@ public class MitigationTests
         await db.SaveChangesAsync();
 
         var ex = await Assert.ThrowsAsync<MessageException>(() =>
-            loginService.handle(new LoginRequestDTO { Cellphone = "51999990022" }));
+            loginService.Handle(new LoginRequestDTO { Cellphone = "51999990022" }));
         Assert.Contains("suspensa", ex.Message.ToLower());
     }
 
@@ -535,5 +534,238 @@ public class MitigationTests
         Assert.Contains("AddRateLimiter", content);
         Assert.Contains("UseRateLimiter", content);
         Assert.Contains("PermitLimit", content);
+    }
+
+    [Fact]
+    public async Task E2_Ownership_OtherRescuerCannotAlterInProgress()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        var userSession = scope.ServiceProvider.GetRequiredService<UserSession>();
+        var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
+
+        var rescuerA = Guid.NewGuid();
+        var rescuerB = Guid.NewGuid();
+        db.Users.Add(new UserEntity { UserId = rescuerA, Cellphone = "51999990030", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990030"), Rescuer = true });
+        db.Users.Add(new UserEntity { UserId = rescuerB, Cellphone = "51999990031", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990031"), Rescuer = true });
+        var rescueId = Guid.NewGuid();
+        db.Rescues.Add(new RescueEntity
+        {
+            RescueId = rescueId, Status = RescueStatusEnum.InProgress,
+            RequestedBy = Guid.NewGuid(), UpdatedBy = rescuerA,
+            Latitude = -29.95, Longitude = -51.18, AdultsNumber = 1,
+            ContactPhone = "51999990030", RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        });
+        await db.SaveChangesAsync();
+
+        userSession.UserId = rescuerB;
+        userSession.Rescuer = true;
+        userSession.Admin = false;
+
+        var ex = await Assert.ThrowsAsync<MessageException>(() =>
+            rescueService.ConfirmRescue(new RescueGuidDTO { RescueId = rescueId }));
+        Assert.Contains("resgatista que iniciou", ex.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task E2_Ownership_RescuerWhoStartedCanComplete()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        var userSession = scope.ServiceProvider.GetRequiredService<UserSession>();
+        var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
+
+        var rescuerId = Guid.NewGuid();
+        db.Users.Add(new UserEntity { UserId = rescuerId, Cellphone = "51999990032", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990032"), Rescuer = true });
+        var rescueId = Guid.NewGuid();
+        db.Rescues.Add(new RescueEntity
+        {
+            RescueId = rescueId, Status = RescueStatusEnum.InProgress,
+            RequestedBy = Guid.NewGuid(), UpdatedBy = rescuerId,
+            Latitude = -29.95, Longitude = -51.18, AdultsNumber = 1,
+            ContactPhone = "51999990032", RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        });
+        await db.SaveChangesAsync();
+
+        userSession.UserId = rescuerId;
+        userSession.Rescuer = true;
+
+        var result = await rescueService.ConfirmRescue(new RescueGuidDTO { RescueId = rescueId });
+        Assert.Contains("concluído", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task E2_Ownership_AdminCanAlterAnyInProgress()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        var userSession = scope.ServiceProvider.GetRequiredService<UserSession>();
+        var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
+
+        var adminId = Guid.NewGuid();
+        var rescuerId = Guid.NewGuid();
+        db.Users.Add(new UserEntity { UserId = adminId, Cellphone = "51999990033", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990033"), Rescuer = true, Admin = true });
+        db.Users.Add(new UserEntity { UserId = rescuerId, Cellphone = "51999990034", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990034"), Rescuer = true });
+        var rescueId = Guid.NewGuid();
+        db.Rescues.Add(new RescueEntity
+        {
+            RescueId = rescueId, Status = RescueStatusEnum.InProgress,
+            RequestedBy = Guid.NewGuid(), UpdatedBy = rescuerId,
+            Latitude = -29.95, Longitude = -51.18, AdultsNumber = 1,
+            ContactPhone = "51999990034", RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        });
+        await db.SaveChangesAsync();
+
+        userSession.UserId = adminId;
+        userSession.Rescuer = true;
+        userSession.Admin = true;
+
+        var result = await rescueService.ConfirmRescue(new RescueGuidDTO { RescueId = rescueId });
+        Assert.Contains("concluído", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task E2_Ownership_RequesterCanAlterOwnRescueInProgress()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        var userSession = scope.ServiceProvider.GetRequiredService<UserSession>();
+        var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
+
+        var requesterId = Guid.NewGuid();
+        var rescuerId = Guid.NewGuid();
+        db.Users.Add(new UserEntity { UserId = requesterId, Cellphone = "51999990035", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990035"), Rescuer = false });
+        db.Users.Add(new UserEntity { UserId = rescuerId, Cellphone = "51999990036", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990036"), Rescuer = true });
+        var rescueId = Guid.NewGuid();
+        db.Rescues.Add(new RescueEntity
+        {
+            RescueId = rescueId, Status = RescueStatusEnum.InProgress,
+            RequestedBy = requesterId, UpdatedBy = rescuerId,
+            Latitude = -29.95, Longitude = -51.18, AdultsNumber = 1,
+            ContactPhone = "51999990035", RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        });
+        await db.SaveChangesAsync();
+
+        userSession.UserId = requesterId;
+        userSession.Rescuer = false;
+
+        var result = await rescueService.ConfirmRescue(new RescueGuidDTO { RescueId = rescueId });
+        Assert.Contains("concluído", result.Message.ToLower());
+    }
+
+    [Fact]
+    public async Task E2_Ownership_NonRequesterNonRescuerCannotAlter()
+    {
+        using var sp = BuildServiceProvider();
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResgateRSDbContext>();
+        var userSession = scope.ServiceProvider.GetRequiredService<UserSession>();
+        var rescueService = scope.ServiceProvider.GetRequiredService<RescueService>();
+
+        var randomUser = Guid.NewGuid();
+        db.Users.Add(new UserEntity { UserId = randomUser, Cellphone = "51999990037", CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash("51999990037"), Rescuer = false });
+        var rescueId = Guid.NewGuid();
+        db.Rescues.Add(new RescueEntity
+        {
+            RescueId = rescueId, Status = RescueStatusEnum.InProgress,
+            RequestedBy = Guid.NewGuid(), UpdatedBy = Guid.NewGuid(),
+            Latitude = -29.95, Longitude = -51.18, AdultsNumber = 1,
+            ContactPhone = "51999990038", RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        });
+        await db.SaveChangesAsync();
+
+        userSession.UserId = randomUser;
+        userSession.Rescuer = false;
+
+        var ex = await Assert.ThrowsAsync<MessageException>(() =>
+            rescueService.ConfirmRescue(new RescueGuidDTO { RescueId = rescueId }));
+        Assert.Contains("permissão", ex.Message.ToLower());
+    }
+
+    [Fact]
+    public void I6_RescuerPhone_RequesterSeesFullPhone()
+    {
+        var requesterId = Guid.NewGuid();
+        var rescuerId = Guid.NewGuid();
+        var entity = new RescueEntity
+        {
+            RescueId = Guid.NewGuid(), Status = RescueStatusEnum.InProgress,
+            RequestedBy = requesterId, UpdatedBy = rescuerId,
+            ContactPhone = "51999990040", Latitude = -29.95, Longitude = -51.18,
+            AdultsNumber = 1, RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        };
+
+        var dto = RescueDTO.FromEntity(entity, currentUserId: requesterId, isRescuer: false, rescuerPhone: "51999990041");
+        Assert.Equal("51999990041", dto.RescuerPhone);
+    }
+
+    [Fact]
+    public void I6_RescuerPhone_OtherNonRescuerDoesNotSeePhone()
+    {
+        var entity = new RescueEntity
+        {
+            RescueId = Guid.NewGuid(), Status = RescueStatusEnum.InProgress,
+            RequestedBy = Guid.NewGuid(), UpdatedBy = Guid.NewGuid(),
+            ContactPhone = "51999990042", Latitude = -29.95, Longitude = -51.18,
+            AdultsNumber = 1, RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        };
+
+        var dto = RescueDTO.FromEntity(entity, currentUserId: Guid.NewGuid(), isRescuer: false, rescuerPhone: "51999990043");
+        Assert.Null(dto.RescuerPhone);
+    }
+
+    [Fact]
+    public void I6_RescuerPhone_RescuerSeesFullPhone()
+    {
+        var rescuerId = Guid.NewGuid();
+        var otherRescuerId = Guid.NewGuid();
+        var entity = new RescueEntity
+        {
+            RescueId = Guid.NewGuid(), Status = RescueStatusEnum.InProgress,
+            RequestedBy = Guid.NewGuid(), UpdatedBy = otherRescuerId,
+            ContactPhone = "51999990044", Latitude = -29.95, Longitude = -51.18,
+            AdultsNumber = 1, RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        };
+
+        var dto = RescueDTO.FromEntity(entity, currentUserId: rescuerId, isRescuer: true, rescuerPhone: "51999990045");
+        Assert.Equal("51999990045", dto.RescuerPhone);
+    }
+
+    [Fact]
+    public void I6_RescuerPhone_NullWhenStartedByMe()
+    {
+        var rescuerId = Guid.NewGuid();
+        var entity = new RescueEntity
+        {
+            RescueId = Guid.NewGuid(), Status = RescueStatusEnum.InProgress,
+            RequestedBy = Guid.NewGuid(), UpdatedBy = rescuerId,
+            ContactPhone = "51999990046", Latitude = -29.95, Longitude = -51.18,
+            AdultsNumber = 1, RequestDateTime = DateTimeOffset.Now, UpdateDateTime = DateTimeOffset.Now
+        };
+
+        var dto = RescueDTO.FromEntity(entity, currentUserId: rescuerId, isRescuer: true, rescuerPhone: "51999990047");
+        Assert.Null(dto.RescuerPhone);
+    }
+
+    [Fact]
+    public void E1_ListEndpoints_ShouldRequireRescuerRole()
+    {
+        var controllerPath = Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "..", "..", "..",
+            "RescueRS", "Presenter", "Controllers", "App", "V1", "Rescue", "RescueController.cs");
+        var content = File.ReadAllText(controllerPath);
+
+        var listMethods = new[] { "ListPendingRescues", "ListPendingRescuesByProximity", "ListCompletedRescues", "ListInProgressRescues" };
+        foreach (var method in listMethods)
+        {
+            var idx = content.IndexOf(method);
+            Assert.True(idx >= 0, $"{method} not found");
+            var snippet = content.Substring(idx, Math.Min(300, content.Length - idx));
+            Assert.Contains("Rescuer", snippet, StringComparison.Ordinal);
+        }
     }
 }
