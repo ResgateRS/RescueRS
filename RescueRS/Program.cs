@@ -131,14 +131,114 @@ void Configure(WebApplication app)
         if (!db.Users.Any(u => u.Admin))
         {
             var adminPhone = "51999000000";
+            var adminId = Guid.NewGuid();
             db.Users.Add(new ResgateRS.Domain.Application.Entities.UserEntity
             {
-                UserId = Guid.NewGuid(),
+                UserId = adminId,
                 Cellphone = adminPhone,
                 CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(adminPhone),
                 Rescuer = true,
                 Admin = true,
             });
+
+            var rescuerPhone = "51988880001";
+            var rescuerId = Guid.NewGuid();
+            db.Users.Add(new ResgateRS.Domain.Application.Entities.UserEntity
+            {
+                UserId = rescuerId,
+                Cellphone = rescuerPhone,
+                CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(rescuerPhone),
+                Rescuer = true,
+                Admin = false,
+            });
+
+            var solicitanteIds = new Guid[5];
+            var solicitantePhones = new[] { "51988001111", "51988002222", "51988003333", "51988004444", "51988005555" };
+            for (int i = 0; i < 5; i++)
+            {
+                solicitanteIds[i] = Guid.NewGuid();
+                db.Users.Add(new ResgateRS.Domain.Application.Entities.UserEntity
+                {
+                    UserId = solicitanteIds[i],
+                    Cellphone = solicitantePhones[i],
+                    CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(solicitantePhones[i]),
+                    Rescuer = false,
+                    Admin = false,
+                });
+            }
+
+            var pendingPhone = "51988009999";
+            var pendingId = Guid.NewGuid();
+            db.Users.Add(new ResgateRS.Domain.Application.Entities.UserEntity
+            {
+                UserId = pendingId,
+                Cellphone = pendingPhone,
+                CellphoneHash = ResgateRS.Infrastructure.Database.Encryption.PhoneHashHelper.ComputeHash(pendingPhone),
+                Rescuer = false,
+                Admin = false,
+                RescuerRequested = true,
+                RescuerRequestDescription = "Sou voluntário da Defesa Civil e tenho barco próprio.",
+            });
+
+            db.Rescues.AddRange(
+                new ResgateRS.Domain.Application.Entities.RescueEntity
+                {
+                    RescueId = Guid.NewGuid(),
+                    RequestDateTime = DateTimeOffset.UtcNow.AddHours(-3),
+                    AdultsNumber = 3, ChildrenNumber = 2, ElderlyNumber = 1, DisabledNumber = 0, AnimalsNumber = 1,
+                    Latitude = -29.9545, Longitude = -51.1066,
+                    Status = RescueRS.Application.Enums.RescueStatusEnum.Pending,
+                    ContactPhone = "51988001111",
+                    Description = "Família ilhada no segundo andar. Água subindo. 3 adultos, 2 crianças e 1 idoso acamado.",
+                    RequestedBy = solicitanteIds[0], ConfirmedBy = Guid.Empty, UpdatedBy = solicitanteIds[0],
+                },
+                new ResgateRS.Domain.Application.Entities.RescueEntity
+                {
+                    RescueId = Guid.NewGuid(),
+                    RequestDateTime = DateTimeOffset.UtcNow.AddHours(-2),
+                    AdultsNumber = 2, ChildrenNumber = 0, ElderlyNumber = 2, DisabledNumber = 1, AnimalsNumber = 0,
+                    Latitude = -29.9197, Longitude = -51.1742,
+                    Status = RescueRS.Application.Enums.RescueStatusEnum.Pending,
+                    ContactPhone = "51988002222",
+                    Description = "Casal de idosos no térreo, um cadeirante. Sem energia elétrica há 2 dias.",
+                    RequestedBy = solicitanteIds[1], ConfirmedBy = Guid.Empty, UpdatedBy = solicitanteIds[1],
+                },
+                new ResgateRS.Domain.Application.Entities.RescueEntity
+                {
+                    RescueId = Guid.NewGuid(),
+                    RequestDateTime = DateTimeOffset.UtcNow.AddHours(-1),
+                    AdultsNumber = 5, ChildrenNumber = 3, ElderlyNumber = 0, DisabledNumber = 0, AnimalsNumber = 2,
+                    Latitude = -29.9687, Longitude = -51.1153,
+                    Status = RescueRS.Application.Enums.RescueStatusEnum.InProgress,
+                    ContactPhone = "51988003333",
+                    Description = "Duas famílias no telhado com crianças pequenas. Precisam de barco urgente.",
+                    RequestedBy = solicitanteIds[2], ConfirmedBy = Guid.Empty, UpdatedBy = rescuerId,
+                },
+                new ResgateRS.Domain.Application.Entities.RescueEntity
+                {
+                    RescueId = Guid.NewGuid(),
+                    RequestDateTime = DateTimeOffset.UtcNow.AddHours(-5),
+                    AdultsNumber = 4, ChildrenNumber = 1, ElderlyNumber = 1, DisabledNumber = 0, AnimalsNumber = 3,
+                    Latitude = -30.0872, Longitude = -51.3708,
+                    Status = RescueRS.Application.Enums.RescueStatusEnum.Completed,
+                    RescueDateTime = DateTimeOffset.UtcNow.AddHours(-4),
+                    ContactPhone = "51988004444",
+                    Description = "Casa com água no peito. Resgatados com barco. Tinham 3 cachorros.",
+                    RequestedBy = solicitanteIds[3], ConfirmedBy = adminId, UpdatedBy = adminId,
+                },
+                new ResgateRS.Domain.Application.Entities.RescueEntity
+                {
+                    RescueId = Guid.NewGuid(),
+                    RequestDateTime = DateTimeOffset.UtcNow.AddMinutes(-30),
+                    AdultsNumber = 1, ChildrenNumber = 0, ElderlyNumber = 0, DisabledNumber = 0, AnimalsNumber = 0,
+                    Latitude = -30.0346, Longitude = -51.2177,
+                    Status = RescueRS.Application.Enums.RescueStatusEnum.Pending,
+                    ContactPhone = "51988005555",
+                    Description = "Pessoa sozinha em escritório no 3o andar. Sem mantimentos há 1 dia.",
+                    RequestedBy = solicitanteIds[4], ConfirmedBy = Guid.Empty, UpdatedBy = solicitanteIds[4],
+                }
+            );
+
             db.SaveChanges();
         }
     }
